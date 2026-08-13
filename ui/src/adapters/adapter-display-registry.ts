@@ -79,9 +79,9 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     icon: Code,
     recommended: true,
   },
-  gemini_local: {
-    label: "Gemini CLI",
-    description: "Gemini CLI harness",
+  antigravity_local: {
+    label: "Antigravity CLI",
+    description: "Antigravity CLI harness",
     icon: Gem,
   },
   grok_local: {

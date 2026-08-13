@@ -19,7 +19,7 @@ import { secretsApi } from "../api/secrets";
 import { assetsApi } from "../api/assets";
 import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
+import { DEFAULT_ANTIGRAVITY_LOCAL_MODEL } from "@paperclipai/adapter-antigravity-local";
 import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
 import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/adapter-codex-local/ui";
 import {
@@ -942,7 +942,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         : adapterType === "opencode_local"
           ? eff("adapterConfig", "variant", String(config.variant ?? ""))
           : eff("adapterConfig", "effort", String(config.effort ?? ""));
-  const showThinkingEffort = adapterType !== "gemini_local" && adapterType !== "cursor_cloud";
+  const showThinkingEffort = adapterType !== "antigravity_local" && adapterType !== "cursor_cloud";
   const codexSearchEnabled = adapterType === "codex_local"
     ? (isCreate ? Boolean(val!.search) : eff("adapterConfig", "search", Boolean(config.search)))
     : false;
@@ -1244,8 +1244,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     if (t === "codex_local") {
                       nextValues.dangerouslyBypassSandbox =
                         DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX;
-                    } else if (t === "gemini_local") {
-                      nextValues.model = DEFAULT_GEMINI_LOCAL_MODEL;
+                    } else if (t === "antigravity_local") {
+                      nextValues.model = DEFAULT_ANTIGRAVITY_LOCAL_MODEL;
                     } else if (t === "cursor") {
                       nextValues.model = DEFAULT_CURSOR_LOCAL_MODEL;
                     } else if (t === "opencode_local") {
@@ -1261,8 +1261,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       modelProfiles: { cheap: { cleared: true } },
                       adapterConfig: {
                         model:
-                          t === "gemini_local"
-                            ? DEFAULT_GEMINI_LOCAL_MODEL
+                          t === "antigravity_local"
+                            ? DEFAULT_ANTIGRAVITY_LOCAL_MODEL
                             : t === "opencode_local"
                               ? DEFAULT_OPENCODE_LOCAL_MODEL
                             : t === "cursor"
@@ -1372,7 +1372,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     ({
                       claude_local: "claude",
                       codex_local: "codex",
-                      gemini_local: "gemini",
+                      antigravity_local: "agy",
                       pi_local: "pi",
                       cursor: "agent",
                       opencode_local: "opencode",
@@ -1991,14 +1991,14 @@ export function AdapterEnvironmentResult({ result }: { result: AdapterEnvironmen
       </div>
       <div className="mt-2 space-y-1.5">
         {result.checks.map((check, idx) => (
-          <div key={`${check.code}-${idx}`} className="text-(length:--text-micro) leading-relaxed break-words">
+          <div key={`${check.code}-${idx}`} className="text-(length:--text-micro) leading-relaxed wrap-break-word">
             <span className="font-medium uppercase tracking-wide opacity-80">
               {check.level}
             </span>
             <span className="mx-1 opacity-60">·</span>
             <span>{check.message}</span>
             {check.detail && <span className="block opacity-75 break-all">({check.detail})</span>}
-            {check.hint && <span className="block opacity-90 break-words">Hint: {check.hint}</span>}
+            {check.hint && <span className="block opacity-90 wrap-break-word">Hint: {check.hint}</span>}
           </div>
         ))}
       </div>

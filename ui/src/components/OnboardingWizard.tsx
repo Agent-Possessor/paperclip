@@ -41,7 +41,7 @@ import {
 import { buildNewAgentRuntimeConfig } from "../lib/new-agent-runtime-config";
 import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
+import { DEFAULT_ANTIGRAVITY_LOCAL_MODEL } from "@paperclipai/adapter-antigravity-local";
 import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@paperclipai/adapter-opencode-local";
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
@@ -295,7 +295,7 @@ export function OnboardingWizard() {
     isLocalAdapterCaps ||
     adapterType === "claude_local" ||
     adapterType === "codex_local" ||
-    adapterType === "gemini_local" ||
+    adapterType === "antigravity_local" ||
     adapterType === "opencode_local" ||
     adapterType === "pi_local" ||
     adapterType === "cursor";
@@ -321,7 +321,7 @@ export function OnboardingWizard() {
   const COMMAND_PLACEHOLDERS: Record<string, string> = {
     claude_local: "claude",
     codex_local: "codex",
-    gemini_local: "gemini",
+    antigravity_local: "agy",
     pi_local: "pi",
     cursor: "agent",
     opencode_local: "opencode",
@@ -505,8 +505,8 @@ export function OnboardingWizard() {
       ...defaultCreateValues,
       adapterType,
       model:
-        adapterType === "gemini_local"
-          ? model || DEFAULT_GEMINI_LOCAL_MODEL
+        adapterType === "antigravity_local"
+          ? model || DEFAULT_ANTIGRAVITY_LOCAL_MODEL
           : adapterType === "cursor"
             ? model || DEFAULT_CURSOR_LOCAL_MODEL
             : adapterType === "opencode_local"
@@ -1342,10 +1342,10 @@ export function OnboardingWizard() {
                                if (opt.comingSoon) return;
                                const nextType = opt.type;
                               setAdapterType(nextType);
-                              if (nextType === "gemini_local" && !model) {
-                                setModel(DEFAULT_GEMINI_LOCAL_MODEL);
-                                return;
-                              }
+                               if (nextType === "antigravity_local" && !model) {
+                                 setModel(DEFAULT_ANTIGRAVITY_LOCAL_MODEL);
+                                 return;
+                               }
                               if (nextType === "cursor" && !model) {
                                 setModel(DEFAULT_CURSOR_LOCAL_MODEL);
                                 return;
@@ -1544,7 +1544,7 @@ export function OnboardingWizard() {
                               ? `${effectiveAdapterCommand} -p --mode ask --output-format json \"Respond with hello.\"`
                               : adapterType === "codex_local"
                               ? `${effectiveAdapterCommand} exec --json -`
-                              : adapterType === "gemini_local"
+                              : adapterType === "antigravity_local"
                                 ? `${effectiveAdapterCommand} --output-format json "Respond with hello."`
                               : adapterType === "opencode_local"
                                 ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
@@ -1556,14 +1556,14 @@ export function OnboardingWizard() {
                           </p>
                           {adapterType === "cursor" ||
                           adapterType === "codex_local" ||
-                          adapterType === "gemini_local" ||
+                          adapterType === "antigravity_local" ||
                           adapterType === "opencode_local" ? (
                             <p className="text-muted-foreground">
                               If auth fails, set{" "}
                               <span className="font-mono">
                                 {adapterType === "cursor"
                                   ? "CURSOR_API_KEY"
-                                  : adapterType === "gemini_local"
+                                  : adapterType === "antigravity_local"
                                     ? "GEMINI_API_KEY"
                                     : "OPENAI_API_KEY"}
                               </span>{" "}
@@ -1573,8 +1573,8 @@ export function OnboardingWizard() {
                                   ? "agent login"
                                   : adapterType === "codex_local"
                                     ? "codex login"
-                                    : adapterType === "gemini_local"
-                                      ? "gemini auth"
+                                    : adapterType === "antigravity_local"
+                                      ? "agy auth"
                                       : "opencode auth login"}
                               </span>
                               .
@@ -1785,7 +1785,7 @@ function AdapterEnvironmentResult({
         {result.checks.map((check, idx) => (
           <div
             key={`${check.code}-${idx}`}
-            className="leading-relaxed break-words"
+            className="leading-relaxed wrap-break-word"
           >
             <span className="font-medium uppercase tracking-wide opacity-80">
               {check.level}
@@ -1798,7 +1798,7 @@ function AdapterEnvironmentResult({
               </span>
             )}
             {check.hint && (
-              <span className="block opacity-90 break-words">
+              <span className="block opacity-90 wrap-break-word">
                 Hint: {check.hint}
               </span>
             )}

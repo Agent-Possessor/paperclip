@@ -8,7 +8,7 @@ describe("adapter display registry", () => {
     expect(getAdapterLabel("claude_local")).toBe("Claude Code");
     expect(getAdapterLabel("acpx_local")).toBe("ACPX (retired)");
     expect(getAdapterLabel("cursor")).toBe("Cursor");
-    expect(getAdapterLabel("gemini_local")).toBe("Gemini CLI");
+    expect(getAdapterLabel("antigravity_local")).toBe("Antigravity CLI");
     expect(getAdapterLabel("grok_local")).toBe("Grok Build");
     expect(getAdapterLabel("hermes_local")).toBe("Hermes");
     expect(getAdapterLabel("hermes_gateway")).toBe("Hermes Gateway");
@@ -20,7 +20,7 @@ describe("adapter display registry", () => {
       claude_local: "Claude Code",
       acpx_local: "ACPX (retired)",
       cursor: "Cursor",
-      gemini_local: "Gemini CLI",
+      antigravity_local: "Antigravity CLI",
       grok_local: "Grok Build",
       hermes_local: "Hermes",
       hermes_gateway: "Hermes Gateway",
