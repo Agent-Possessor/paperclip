@@ -1,3 +1,4 @@
+/// <reference path="../types/express.d.ts" />
 import express from "express";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -190,21 +191,21 @@ describe("adapter routes", () => {
     expect(cursorAdapter.capabilities.supportsInstructionsBundle).toBe(true);
     expect(cursorAdapter.capabilities.supportsAcp).toBe(false);
 
-    const geminiAdapter = res.body.find((a: any) => a.type === "gemini_local");
-    expect(geminiAdapter).toBeDefined();
-    expect(geminiAdapter.capabilities).toMatchObject({
+    const antigravityAdapter = res.body.find((a: any) => a.type === "antigravity_local");
+    expect(antigravityAdapter).toBeDefined();
+    expect(antigravityAdapter.capabilities).toMatchObject({
       supportsInstructionsBundle: true,
       supportsSkills: true,
       supportsLocalAgentJwt: true,
       requiresMaterializedRuntimeSkills: true,
       supportsAcp: true,
     });
-    expect(geminiAdapter.acp).toMatchObject({
-      agentId: "gemini",
+    expect(antigravityAdapter.acp).toMatchObject({
+      agentId: "antigravity",
       skillsMode: "ephemeral",
       prerequisites: {
         nodeRange: ">=20.0.0",
-        packages: ["@google/gemini-cli"],
+        packages: [],
       },
     });
 
@@ -356,10 +357,10 @@ describe("adapter routes", () => {
     );
   });
 
-  it("serves the built-in gemini_local ACP engine config schema", async () => {
+  it("serves the built-in antigravity_local ACP engine config schema", async () => {
     const app = createApp();
 
-    const res = await request(app).get("/api/adapters/gemini_local/config-schema");
+    const res = await request(app).get("/api/adapters/antigravity_local/config-schema");
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.fields).toEqual(

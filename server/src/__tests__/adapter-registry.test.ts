@@ -272,7 +272,7 @@ describe("server adapter registry", () => {
         source: "adapter_default",
       }),
     ]);
-    await expect(listAdapterModelProfiles("gemini_local")).resolves.toEqual([
+    await expect(listAdapterModelProfiles("antigravity_local")).resolves.toEqual([
       expect.objectContaining({
         key: "cheap",
         adapterConfig: expect.objectContaining({ model: "gemini-2.5-flash-lite" }),
@@ -312,10 +312,10 @@ describe("server adapter registry", () => {
       detectCommand: "codex",
       installCommand: expectedCodexInstall,
     });
-    expect(findActiveServerAdapter("gemini_local")?.getRuntimeCommandSpec?.({})).toEqual({
-      command: "gemini",
-      detectCommand: "gemini",
-      installCommand: expectedGeminiInstall,
+    expect(findActiveServerAdapter("antigravity_local")?.getRuntimeCommandSpec?.({})).toEqual({
+      command: "agy",
+      detectCommand: "agy",
+      installCommand: "if ! command -v 'agy' >/dev/null 2>&1; then curl -fsSL https://antigravity.google/cli/install.sh | bash; fi",
     });
     expect(findActiveServerAdapter("opencode_local")?.getRuntimeCommandSpec?.({})).toEqual({
       command: "opencode",
