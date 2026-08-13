@@ -6,9 +6,9 @@ import {
   isCursorUnknownSessionError,
 } from "@paperclipai/adapter-cursor-local/server";
 import {
-  sessionCodec as geminiSessionCodec,
-  isGeminiSessionUnrecoverableError,
-} from "@paperclipai/adapter-gemini-local/server";
+  sessionCodec as antigravitySessionCodec,
+  isAntigravitySessionUnrecoverableError,
+} from "@paperclipai/adapter-antigravity-local/server";
 import {
   sessionCodec as opencodeSessionCodec,
   isOpenCodeUnknownSessionError,
@@ -145,35 +145,35 @@ describe("adapter session codecs", () => {
     expect(cursorSessionCodec.getDisplayId?.(serialized ?? null)).toBe("cursor-session-1");
   });
 
-  it("normalizes gemini session params with cwd", () => {
-    const parsed = geminiSessionCodec.deserialize({
-      session_id: "gemini-session-1",
-      cwd: "/tmp/gemini",
+  it("normalizes antigravity session params with cwd", () => {
+    const parsed = antigravitySessionCodec.deserialize({
+      session_id: "antigravity-session-1",
+      cwd: "/tmp/antigravity",
     });
     expect(parsed).toEqual({
-      sessionId: "gemini-session-1",
-      cwd: "/tmp/gemini",
+      sessionId: "antigravity-session-1",
+      cwd: "/tmp/antigravity",
     });
 
-    const serialized = geminiSessionCodec.serialize(parsed);
+    const serialized = antigravitySessionCodec.serialize(parsed);
     expect(serialized).toEqual({
-      sessionId: "gemini-session-1",
-      cwd: "/tmp/gemini",
+      sessionId: "antigravity-session-1",
+      cwd: "/tmp/antigravity",
     });
-    expect(geminiSessionCodec.getDisplayId?.(serialized ?? null)).toBe("gemini-session-1");
+    expect(antigravitySessionCodec.getDisplayId?.(serialized ?? null)).toBe("antigravity-session-1");
   });
 
-  it("preserves gemini ACP session params for ACP lane resumes", () => {
-    const parsed = geminiSessionCodec.deserialize({
+  it("preserves antigravity ACP session params for ACP lane resumes", () => {
+    const parsed = antigravitySessionCodec.deserialize({
       sessionKey: "paperclip:company:agent:task:fingerprint",
       runtimeSessionName: "runtime-session-1",
       acpxRecordId: "record-1",
       acpSessionId: "acp-session-1",
       agentSessionId: "agent-session-1",
-      agent: "gemini",
-      cwd: "/tmp/gemini-acp",
+      agent: "antigravity",
+      cwd: "/tmp/antigravity-acp",
       mode: "persistent",
-      stateDir: "/tmp/gemini-acp-state",
+      stateDir: "/tmp/antigravity-acp-state",
       configFingerprint: "fingerprint",
       workspaceId: "workspace-1",
     });
@@ -181,13 +181,13 @@ describe("adapter session codecs", () => {
     expect(parsed).toMatchObject({
       runtimeSessionName: "runtime-session-1",
       acpSessionId: "acp-session-1",
-      agent: "gemini",
-      cwd: "/tmp/gemini-acp",
+      agent: "antigravity",
+      cwd: "/tmp/antigravity-acp",
       configFingerprint: "fingerprint",
       workspaceId: "workspace-1",
     });
-    expect(geminiSessionCodec.serialize(parsed)).toEqual(parsed);
-    expect(geminiSessionCodec.getDisplayId?.(parsed)).toBe("runtime-session-1");
+    expect(antigravitySessionCodec.serialize(parsed)).toEqual(parsed);
+    expect(antigravitySessionCodec.getDisplayId?.(parsed)).toBe("runtime-session-1");
   });
 
   it("preserves acpx session params required for compatibility checks", () => {
@@ -298,22 +298,22 @@ describe("cursor resume recovery detection", () => {
   });
 });
 
-describe("gemini resume recovery detection", () => {
-  it("detects unknown session errors from gemini output", () => {
+describe("antigravity resume recovery detection", () => {
+  it("detects unknown session errors from antigravity output", () => {
     expect(
-      isGeminiSessionUnrecoverableError(
+      isAntigravitySessionUnrecoverableError(
         "",
         "unknown session id abc",
       ),
     ).toBe(true);
     expect(
-      isGeminiSessionUnrecoverableError(
+      isAntigravitySessionUnrecoverableError(
         "",
         "checkpoint latest not found",
       ),
     ).toBe(true);
     expect(
-      isGeminiSessionUnrecoverableError(
+      isAntigravitySessionUnrecoverableError(
         "{\"type\":\"result\",\"subtype\":\"success\"}",
         "",
       ),

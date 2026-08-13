@@ -59,18 +59,18 @@ import {
 } from "@paperclipai/adapter-cursor-cloud/server";
 import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@paperclipai/adapter-cursor-cloud";
 import {
-  execute as geminiExecute,
-  listGeminiSkills,
-  syncGeminiSkills,
-  testEnvironment as geminiTestEnvironment,
-  sessionCodec as geminiSessionCodec,
-  getConfigSchema as getGeminiConfigSchema,
-} from "@paperclipai/adapter-gemini-local/server";
+  execute as antigravityExecute,
+  listAntigravitySkills,
+  syncAntigravitySkills,
+  testEnvironment as antigravityTestEnvironment,
+  sessionCodec as antigravitySessionCodec,
+  getConfigSchema as getAntigravityConfigSchema,
+} from "@paperclipai/adapter-antigravity-local/server";
 import {
-  agentConfigurationDoc as geminiAgentConfigurationDoc,
-  models as geminiModels,
-  modelProfiles as geminiModelProfiles,
-} from "@paperclipai/adapter-gemini-local";
+  agentConfigurationDoc as antigravityAgentConfigurationDoc,
+  models as antigravityModels,
+  modelProfiles as antigravityModelProfiles,
+} from "@paperclipai/adapter-antigravity-local";
 import {
   execute as grokExecute,
   listGrokSkills,
@@ -318,32 +318,42 @@ const cursorCloudAdapter: ServerAdapterModule = {
   getConfigSchema: getCursorCloudConfigSchema,
 };
 
-const geminiLocalAdapter: ServerAdapterModule = {
-  type: "gemini_local",
-  execute: geminiExecute,
-  testEnvironment: geminiTestEnvironment,
+const antigravityLocalAdapter: ServerAdapterModule = {
+  type: "antigravity_local",
+  execute: antigravityExecute,
+  testEnvironment: antigravityTestEnvironment,
   acp: {
-    agentId: "gemini",
+    agentId: "antigravity",
     skillsMode: "ephemeral",
     prerequisites: {
       nodeRange: ">=20.0.0",
-      packages: ["@google/gemini-cli"],
+      packages: [],
     },
   },
-  listSkills: listGeminiSkills,
-  syncSkills: syncGeminiSkills,
-  sessionCodec: geminiSessionCodec,
-  sessionManagement: getAdapterSessionManagement("gemini_local") ?? undefined,
-  models: geminiModels,
-  modelProfiles: geminiModelProfiles,
+  listSkills: listAntigravitySkills,
+  syncSkills: syncAntigravitySkills,
+  sessionCodec: antigravitySessionCodec,
+  sessionManagement: getAdapterSessionManagement("antigravity_local") ?? undefined,
+  models: antigravityModels,
+  modelProfiles: antigravityModelProfiles,
   supportsLocalAgentJwt: true,
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: true,
-  getRuntimeCommandSpec: (config) =>
-    buildNpmRuntimeCommandSpec(config, "gemini", "@google/gemini-cli"),
-  agentConfigurationDoc: geminiAgentConfigurationDoc,
-  getConfigSchema: getGeminiConfigSchema,
+  getRuntimeCommandSpec: (config) => {
+    const command = readConfiguredCommand(config, "agy");
+    const canSelfInstall = !hasPathSeparator(command) && (command === "agy" || command === "gemini");
+    const installLine = "curl -fsSL https://antigravity.google/cli/install.sh | bash";
+    return {
+      command,
+      detectCommand: command,
+      installCommand: canSelfInstall
+        ? `if ! command -v ${shellQuote(command)} >/dev/null 2>&1; then ${installLine}; fi`
+        : null,
+    };
+  },
+  agentConfigurationDoc: antigravityAgentConfigurationDoc,
+  getConfigSchema: getAntigravityConfigSchema,
 };
 
 const grokLocalAdapter: ServerAdapterModule = {
@@ -441,7 +451,7 @@ function registerBuiltInAdapters() {
     piLocalAdapter,
     cursorCloudAdapter,
     cursorLocalAdapter,
-    geminiLocalAdapter,
+    antigravityLocalAdapter,
     grokLocalAdapter,
     hermesGatewayAdapter,
     hermesLocalAdapter,
