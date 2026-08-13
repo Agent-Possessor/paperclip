@@ -18,12 +18,12 @@ const {
     signal: null,
     timedOut: false,
     stdout: [
-      JSON.stringify({ type: "system", subtype: "init", session_id: "gemini-session-1", model: "gemini-2.5-pro" }),
+      JSON.stringify({ type: "system", subtype: "init", session_id: "antigravity-session-1", model: "gemini-2.5-pro" }),
       JSON.stringify({ type: "message", role: "assistant", content: "hello" }),
       JSON.stringify({
         type: "result",
         status: "success",
-        session_id: "gemini-session-1",
+        session_id: "antigravity-session-1",
         stats: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
       }),
     ].join("\n"),
@@ -32,7 +32,7 @@ const {
     startedAt: new Date().toISOString(),
   })),
   ensureCommandResolvable: vi.fn(async () => undefined),
-  resolveCommandForLogs: vi.fn(async () => "ssh://fixture@127.0.0.1:2222/remote/workspace :: gemini"),
+  resolveCommandForLogs: vi.fn(async () => "ssh://fixture@127.0.0.1:2222/remote/workspace :: agy"),
   prepareWorkspaceForSshExecution: vi.fn(async () => ({ gitBacked: false })),
   restoreWorkspaceFromSshExecution: vi.fn(async () => undefined),
   runSshCommand: vi.fn(async () => ({
@@ -88,7 +88,7 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
 
 import { execute } from "./execute.js";
 
-describe("gemini remote execution", () => {
+describe("antigravity remote execution", () => {
   const cleanupDirs: string[] = [];
 
   afterEach(async () => {
@@ -100,8 +100,8 @@ describe("gemini remote execution", () => {
     }
   });
 
-  it("prepares the workspace, syncs Gemini skills, and restores workspace changes for remote SSH execution", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-gemini-remote-"));
+  it("prepares the workspace, syncs Antigravity skills, and restores workspace changes for remote SSH execution", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-remote-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const alternateWorkspaceDir = path.join(rootDir, "workspace-other");
@@ -114,8 +114,8 @@ describe("gemini remote execution", () => {
       agent: {
         id: "agent-1",
         companyId: "company-1",
-        name: "Gemini Builder",
-        adapterType: "gemini_local",
+        name: "Antigravity Builder",
+        adapterType: "antigravity_local",
         adapterConfig: {},
       },
       runtime: {
@@ -125,7 +125,7 @@ describe("gemini remote execution", () => {
         taskKey: null,
       },
       config: {
-        command: "gemini",
+        command: "agy",
         env: {
           GEMINI_API_KEY: "test-key",
           NO_COLOR: "1",
@@ -167,7 +167,7 @@ describe("gemini remote execution", () => {
     });
 
     expect(result.sessionParams).toMatchObject({
-      sessionId: "gemini-session-1",
+      sessionId: "antigravity-session-1",
       cwd: managedRemoteWorkspace,
       remoteExecution: {
         transport: "ssh",
@@ -180,12 +180,12 @@ describe("gemini remote execution", () => {
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
     expect(syncDirectoryToSsh).toHaveBeenCalledTimes(1);
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
-      remoteDir: `${managedRemoteWorkspace}/.paperclip-runtime/gemini/skills`,
+      remoteDir: `${managedRemoteWorkspace}/.paperclip-runtime/antigravity/skills`,
       followSymlinks: true,
     }));
     expect(runSshCommand).toHaveBeenCalledWith(
       expect.anything(),
-      expect.stringContaining(".gemini/skills"),
+      expect.stringContaining(".gemini/antigravity-cli/skills"),
       expect.anything(),
     );
     // The headless-auth settings.json write is scoped to managed HOMEs (sandbox
@@ -193,7 +193,7 @@ describe("gemini remote execution", () => {
     // stay visible and the adapter must not create files.
     expect(runSshCommand).not.toHaveBeenCalledWith(
       expect.anything(),
-      expect.stringContaining(".gemini/settings.json"),
+      expect.stringContaining(".gemini/antigravity-cli/settings.json"),
       expect.anything(),
     );
     expect(runSshCommand).not.toHaveBeenCalledWith(
@@ -231,38 +231,46 @@ describe("gemini remote execution", () => {
   });
 
   it("pre-selects gemini-api-key auth in the managed HOME for sandbox execution", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-gemini-sandbox-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-sandbox-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
 
-    const geminiOutput = [
-      JSON.stringify({ type: "system", subtype: "init", session_id: "gemini-session-2", model: "gemini-2.5-pro" }),
+    const antigravityOutput = [
+      JSON.stringify({ type: "system", subtype: "init", session_id: "antigravity-session-2", model: "gemini-2.5-pro" }),
       JSON.stringify({ type: "message", role: "assistant", content: "hello" }),
       JSON.stringify({
         type: "result",
         status: "success",
-        session_id: "gemini-session-2",
+        session_id: "antigravity-session-2",
         stats: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 1 },
       }),
     ].join("\n");
-    const runnerExecute = vi.fn(async (input: { command: string; args?: string[] }) => ({
-      exitCode: 0,
-      signal: null,
-      timedOut: false,
-      stdout: input.command === "gemini" ? geminiOutput : "",
-      stderr: "",
-      pid: 321,
-      startedAt: new Date().toISOString(),
-    }));
+    const runnerExecute = vi.fn(async (input: { command: string; args?: string[] }) => {
+      let stdout = "";
+      if (input.command === "agy") {
+        stdout = antigravityOutput;
+      } else if (input.args?.some(arg => arg.includes("wc -c"))) {
+        stdout = "0";
+      }
+      return {
+        exitCode: 0,
+        signal: null,
+        timedOut: false,
+        stdout,
+        stderr: "",
+        pid: 321,
+        startedAt: new Date().toISOString(),
+      };
+    });
 
     await execute({
       runId: "run-sandbox-1",
       agent: {
         id: "agent-1",
         companyId: "company-1",
-        name: "Gemini Builder",
-        adapterType: "gemini_local",
+        name: "Antigravity Builder",
+        adapterType: "antigravity_local",
         adapterConfig: {},
       },
       runtime: {
@@ -275,7 +283,7 @@ describe("gemini remote execution", () => {
         // Pin the CLI lane: sandbox targets with a runner now default to ACP,
         // and this test covers the CLI lane's managed-HOME auth flow.
         engine: "cli",
-        command: "gemini",
+        command: "agy",
         env: { GEMINI_API_KEY: "test-key" },
       },
       context: {
@@ -297,15 +305,15 @@ describe("gemini remote execution", () => {
     const runnerScripts = runnerExecute.mock.calls.map(
       (call) => `${call[0].command} ${(call[0].args ?? []).join(" ")}`,
     );
-    const settingsWrite = runnerScripts.find((script) => script.includes(".gemini/settings.json"));
+    const settingsWrite = runnerScripts.find((script) => script.includes(".gemini/antigravity-cli/settings.json"));
     expect(settingsWrite).toBeDefined();
     expect(settingsWrite).toContain("gemini-api-key");
     // The managed HOME lives under the per-run runtime root, never a real home.
     expect(settingsWrite).toContain(".paperclip-runtime");
   });
 
-  it("resumes saved Gemini sessions for remote SSH execution only when the identity matches", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-gemini-remote-resume-"));
+  it("resumes saved Antigravity sessions for remote SSH execution only when the identity matches", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-remote-resume-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-ssh-resume/workspace";
@@ -316,8 +324,8 @@ describe("gemini remote execution", () => {
       agent: {
         id: "agent-1",
         companyId: "company-1",
-        name: "Gemini Builder",
-        adapterType: "gemini_local",
+        name: "Antigravity Builder",
+        adapterType: "antigravity_local",
         adapterConfig: {},
       },
       runtime: {
@@ -337,7 +345,7 @@ describe("gemini remote execution", () => {
         taskKey: null,
       },
       config: {
-        command: "gemini",
+        command: "agy",
       },
       context: {
         paperclipWorkspace: {
@@ -361,12 +369,12 @@ describe("gemini remote execution", () => {
     });
 
     const call = runChildProcess.mock.calls[0] as unknown as [string, string, string[]] | undefined;
-    expect(call?.[2]).toContain("--resume");
+    expect(call?.[2]).toContain("--conversation");
     expect(call?.[2]).toContain("session-123");
   });
 
   it("restores the remote workspace if skills sync fails after workspace prep", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-gemini-remote-sync-fail-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-remote-sync-fail-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
@@ -377,8 +385,8 @@ describe("gemini remote execution", () => {
       agent: {
         id: "agent-1",
         companyId: "company-1",
-        name: "Gemini Builder",
-        adapterType: "gemini_local",
+        name: "Antigravity Builder",
+        adapterType: "antigravity_local",
         adapterConfig: {},
       },
       runtime: {
@@ -388,7 +396,7 @@ describe("gemini remote execution", () => {
         taskKey: null,
       },
       config: {
-        command: "gemini",
+        command: "agy",
       },
       context: {
         paperclipWorkspace: {

@@ -3,24 +3,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
-  executeGeminiAcp,
+  executeAntigravityAcp,
   readPaperclipRuntimeSkillEntries,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
 } = vi.hoisted(() => ({
   ensureAdapterExecutionTargetCommandResolvable: vi.fn(async () => undefined),
   ensureAdapterExecutionTargetRuntimeCommandInstalled: vi.fn(async () => undefined),
-  executeGeminiAcp: vi.fn(async () => {
+  executeAntigravityAcp: vi.fn(async () => {
     throw new Error('Transform failed with 1 error: execute.ts:818:0: ERROR: Unexpected "<<"');
   }),
   readPaperclipRuntimeSkillEntries: vi.fn(async () => []),
-  resolveAdapterExecutionTargetCommandForLogs: vi.fn(async () => "gemini"),
+  resolveAdapterExecutionTargetCommandForLogs: vi.fn(async () => "agy"),
   runAdapterExecutionTargetProcess: vi.fn(async () => ({
     exitCode: 0,
     signal: null,
     timedOut: false,
     stdout: [
-      JSON.stringify({ type: "init", session_id: "gemini-session-1" }),
+      JSON.stringify({ type: "init", session_id: "antigravity-session-1" }),
       JSON.stringify({ type: "message", role: "assistant", content: "hello" }),
       JSON.stringify({
         type: "result",
@@ -35,10 +35,10 @@ const {
 }));
 
 vi.mock("./acp.js", () => ({
-  createGeminiAcpExecutor: () => executeGeminiAcp,
-  formatGeminiAcpFallbackMessage: (reason: string) =>
-    `[paperclip] Gemini ACP default unavailable; falling back to Gemini CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
-  resolveGeminiExecutionEngineForRun: async (ctx: { config: Record<string, unknown> }) =>
+  createAntigravityAcpExecutor: () => executeAntigravityAcp,
+  formatAntigravityAcpFallbackMessage: (reason: string) =>
+    `[paperclip] Antigravity ACP default unavailable; falling back to Antigravity CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
+  resolveAntigravityExecutionEngineForRun: async (ctx: { config: Record<string, unknown> }) =>
     ctx.config.engine === "acp"
       ? { engine: "acp", explicit: true }
       : { engine: "acp", explicit: false },
@@ -75,8 +75,8 @@ function buildContext(config: Record<string, unknown> = {}) {
     agent: {
       id: "agent-1",
       companyId: "company-1",
-      name: "Gemini Coder",
-      adapterType: "gemini_local",
+      name: "Antigravity Coder",
+      adapterType: "antigravity_local",
       adapterConfig: {},
     },
     runtime: {
@@ -94,23 +94,23 @@ function buildContext(config: Record<string, unknown> = {}) {
   };
 }
 
-describe("gemini_local ACP startup fallback", () => {
+describe("antigravity_local ACP startup fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("falls back to Gemini CLI when auto-selected ACP fails before execution starts", async () => {
+  it("falls back to Antigravity CLI when auto-selected ACP fails before execution starts", async () => {
     const ctx = buildContext();
 
     const result = await execute(ctx as never);
 
     expect(result.exitCode).toBe(0);
     expect(result.summary).toBe("hello");
-    expect(executeGeminiAcp).toHaveBeenCalledTimes(1);
+    expect(executeAntigravityAcp).toHaveBeenCalledTimes(1);
     expect(runAdapterExecutionTargetProcess).toHaveBeenCalledTimes(1);
     expect(ctx.onLog).toHaveBeenCalledWith(
       "stderr",
-      expect.stringContaining("Gemini ACP startup failed"),
+      expect.stringContaining("Antigravity ACP startup failed"),
     );
     expect(ctx.onLog).toHaveBeenCalledWith(
       "stderr",
