@@ -200,11 +200,11 @@ export async function testEnvironment(
 
       const args = ["--output-format", "stream-json", "--prompt", "Respond with hello."];
       if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) args.push("--model", model);
-      if (approvalMode !== "default") args.push("--approval-mode", approvalMode);
+      if (approvalMode !== "default" || asBoolean(config.dangerouslySkipPermissions, false) || asBoolean(config.yolo, false)) {
+        args.push("--dangerously-skip-permissions");
+      }
       if (sandbox) {
         args.push("--sandbox");
-      } else {
-        args.push("--sandbox=none");
       }
       if (extraArgs.length > 0) args.push(...extraArgs);
 

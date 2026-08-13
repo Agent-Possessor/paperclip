@@ -493,7 +493,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   }
   const commandNotes = (() => {
     const notes: string[] = ["Prompt is passed to Antigravity CLI via --prompt for non-interactive execution."];
-    notes.push("Added --approval-mode yolo for unattended execution.");
+    notes.push("Added --dangerously-skip-permissions for unattended execution.");
     notes.push("Set headless terminal/browser env so Antigravity CLI fails fast instead of opening interactive auth or color prompts.");
     if (executionTargetIsRemote) {
       notes.push("Set GEMINI_CLI_TRUST_WORKSPACE=true for remote headless execution.");
@@ -555,13 +555,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const buildArgs = (resumeSessionId: string | null) => {
     const args = ["--output-format", "stream-json"];
-    if (resumeSessionId) args.push("--resume", resumeSessionId);
+    if (resumeSessionId) args.push("--conversation", resumeSessionId);
     if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) args.push("--model", model);
-    args.push("--approval-mode", "yolo");
+    args.push("--dangerously-skip-permissions");
     if (sandbox) {
       args.push("--sandbox");
-    } else {
-      args.push("--sandbox=none");
     }
     if (extraArgs.length > 0) args.push(...extraArgs);
     args.push("--prompt", prompt);

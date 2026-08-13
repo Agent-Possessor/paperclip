@@ -11,8 +11,14 @@ export const DEFAULT_ANTIGRAVITY_LOCAL_MODEL = "auto";
 
 export const models = [
   { id: DEFAULT_ANTIGRAVITY_LOCAL_MODEL, label: "Auto" },
+  { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+  { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash Lite" },
+  { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
   { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
   { id: "gemini-3.1-pro-preview-customtools", label: "Gemini 3.1 Pro Preview (Custom Tools)" },
+  { id: "gemini-3.1-flash", label: "Gemini 3.1 Flash" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite" },
   { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
   { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
@@ -38,7 +44,7 @@ Adapter: antigravity_local
 
 Use when:
 - You want Paperclip to run the Antigravity CLI locally on the host machine
-- You want Antigravity chat sessions resumed across heartbeats with --resume
+- You want Antigravity chat sessions resumed across heartbeats with --conversation
 - You want Paperclip skills injected locally without polluting the global environment
 
 Don't use when:
@@ -52,7 +58,7 @@ Core fields:
 - promptTemplate (string, optional): run prompt template
 - model (string, optional): Gemini model id. Defaults to auto.
 - engine (string, optional): leave unset/auto to use ACP when prerequisites pass and fall back to the Antigravity CLI with diagnostics. Use "cli" to pin the CLI lane or "acp" to require ACP.
-- sandbox (boolean, optional): run in sandbox mode (default: false, passes --sandbox=none)
+- sandbox (boolean, optional): run in sandbox mode (default: false, passes --sandbox when enabled)
 - command (string, optional): defaults to "agy"
 - extraArgs (string[], optional): additional CLI args
 - env (object, optional): KEY=VALUE environment variables
@@ -70,7 +76,7 @@ Notes:
 - Antigravity ACP is the preferred auto lane when Node >=20 and the local Antigravity CLI command is available. It runs Antigravity CLI's native \`agy --acp\` server through Paperclip's shared ACP engine, including selected skill links, Paperclip runtime prompt/env guidance, model config, and persistent ACP session state. Auto selection falls back to the CLI lane when ACP prerequisites are unavailable; explicit engine="acp" fails loudly.
 - Runs use --prompt for non-interactive execution, not stdin.
 - The adapter sets a headless-safe terminal/browser environment for Antigravity CLI child processes so unattended runs do not wait on browser auth or 256-color terminal prompts.
-- Sessions resume with --resume when stored session cwd matches the current cwd.
+- Sessions resume with --conversation when stored session cwd matches the current cwd.
 - Paperclip auto-injects local skills into \`~/.gemini/antigravity-cli/skills/\` via symlinks, so the CLI can discover both credentials and skills in their natural location.
 - Authentication can use GEMINI_API_KEY / GOOGLE_API_KEY or local Antigravity CLI login.
 `;
