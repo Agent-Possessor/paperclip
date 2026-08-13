@@ -1,5 +1,5 @@
 {
-  "name": "@paperclipai/adapter-gemini-local",
+  "name": "@paperclipai/adapter-antigravity-local",
   "version": "0.3.1",
   "license": "MIT",
   "homepage": "https://github.com/paperclipai/paperclip",
@@ -9,7 +9,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/paperclipai/paperclip",
-    "directory": "packages/adapters/gemini-local"
+    "directory": "packages/adapters/antigravity-local"
   },
   "type": "module",
   "exports": {

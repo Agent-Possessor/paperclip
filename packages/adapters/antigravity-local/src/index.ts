@@ -1,17 +1,16 @@
 import {
-  buildSandboxNpmInstallCommand,
   type AdapterModelProfileDefinition,
 } from "@paperclipai/adapter-utils";
 
-export const type = "gemini_local";
-export const label = "Gemini CLI";
+export const type = "antigravity_local";
+export const label = "Antigravity CLI";
 
-export const SANDBOX_INSTALL_COMMAND = buildSandboxNpmInstallCommand("@google/gemini-cli");
+export const SANDBOX_INSTALL_COMMAND = "curl -fsSL https://antigravity.google/cli/install.sh | bash";
 
-export const DEFAULT_GEMINI_LOCAL_MODEL = "auto";
+export const DEFAULT_ANTIGRAVITY_LOCAL_MODEL = "auto";
 
 export const models = [
-  { id: DEFAULT_GEMINI_LOCAL_MODEL, label: "Auto" },
+  { id: DEFAULT_ANTIGRAVITY_LOCAL_MODEL, label: "Auto" },
   { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
   { id: "gemini-3.1-pro-preview-customtools", label: "Gemini 3.1 Pro Preview (Custom Tools)" },
   { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
@@ -25,7 +24,7 @@ export const modelProfiles: AdapterModelProfileDefinition[] = [
   {
     key: "cheap",
     label: "Cheap",
-    description: "Use Gemini Flash Lite as the budget Gemini CLI lane while preserving the primary model.",
+    description: "Use Gemini Flash Lite as the budget Antigravity CLI lane while preserving the primary model.",
     adapterConfig: {
       model: "gemini-2.5-flash-lite",
     },
@@ -33,31 +32,31 @@ export const modelProfiles: AdapterModelProfileDefinition[] = [
   },
 ];
 
-export const agentConfigurationDoc = `# gemini_local agent configuration
+export const agentConfigurationDoc = `# antigravity_local agent configuration
 
-Adapter: gemini_local
+Adapter: antigravity_local
 
 Use when:
-- You want Paperclip to run the Gemini CLI locally on the host machine
-- You want Gemini chat sessions resumed across heartbeats with --resume
+- You want Paperclip to run the Antigravity CLI locally on the host machine
+- You want Antigravity chat sessions resumed across heartbeats with --resume
 - You want Paperclip skills injected locally without polluting the global environment
 
 Don't use when:
 - You need webhook-style external invocation (use http or openclaw_gateway)
 - You only need a one-shot script without an AI coding agent loop (use process)
-- Gemini CLI is not installed on the machine that runs Paperclip
+- Antigravity CLI is not installed on the machine that runs Paperclip
 
 Core fields:
 - cwd (string, optional): default absolute working directory fallback for the agent process (created if missing when possible)
 - instructionsFilePath (string, optional): absolute path to a markdown instructions file prepended to the run prompt
 - promptTemplate (string, optional): run prompt template
 - model (string, optional): Gemini model id. Defaults to auto.
-- engine (string, optional): leave unset/auto to use ACP when prerequisites pass and fall back to the Gemini CLI with diagnostics. Use "cli" to pin the CLI lane or "acp" to require ACP.
+- engine (string, optional): leave unset/auto to use ACP when prerequisites pass and fall back to the Antigravity CLI with diagnostics. Use "cli" to pin the CLI lane or "acp" to require ACP.
 - sandbox (boolean, optional): run in sandbox mode (default: false, passes --sandbox=none)
-- command (string, optional): defaults to "gemini"
+- command (string, optional): defaults to "agy"
 - extraArgs (string[], optional): additional CLI args
 - env (object, optional): KEY=VALUE environment variables
-- agentCommand (string, optional): ACP server command override used only when engine="acp"; defaults to gemini --acp
+- agentCommand (string, optional): ACP server command override used only when engine="acp"; defaults to agy --acp
 - mode (string, optional): ACP session mode when engine="acp"; persistent or oneshot
 - nonInteractivePermissions (string, optional): ACP non-interactive permission fallback when engine="acp"; deny or fail
 - stateDir (string, optional): ACP state directory override when engine="acp"
@@ -68,10 +67,10 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period in seconds
 
 Notes:
-- Gemini ACP is the preferred auto lane when Node >=20 and the local Gemini CLI command is available. It runs Gemini CLI's native \`gemini --acp\` server through Paperclip's shared ACP engine, including selected skill links, Paperclip runtime prompt/env guidance, model config, and persistent ACP session state. Auto selection falls back to the CLI lane when ACP prerequisites are unavailable; explicit engine="acp" fails loudly.
+- Antigravity ACP is the preferred auto lane when Node >=20 and the local Antigravity CLI command is available. It runs Antigravity CLI's native \`agy --acp\` server through Paperclip's shared ACP engine, including selected skill links, Paperclip runtime prompt/env guidance, model config, and persistent ACP session state. Auto selection falls back to the CLI lane when ACP prerequisites are unavailable; explicit engine="acp" fails loudly.
 - Runs use --prompt for non-interactive execution, not stdin.
-- The adapter sets a headless-safe terminal/browser environment for Gemini CLI child processes so unattended runs do not wait on browser auth or 256-color terminal prompts.
+- The adapter sets a headless-safe terminal/browser environment for Antigravity CLI child processes so unattended runs do not wait on browser auth or 256-color terminal prompts.
 - Sessions resume with --resume when stored session cwd matches the current cwd.
-- Paperclip auto-injects local skills into \`~/.gemini/skills/\` via symlinks, so the CLI can discover both credentials and skills in their natural location.
-- Authentication can use GEMINI_API_KEY / GOOGLE_API_KEY or local Gemini CLI login.
+- Paperclip auto-injects local skills into \`~/.gemini/antigravity-cli/skills/\` via symlinks, so the CLI can discover both credentials and skills in their natural location.
+- Authentication can use GEMINI_API_KEY / GOOGLE_API_KEY or local Antigravity CLI login.
 `;

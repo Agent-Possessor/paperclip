@@ -17,16 +17,16 @@ export function getConfigSchema(): AdapterConfigSchema {
         default: "auto",
         options: [
           { value: "auto", label: "Auto (ACP preferred)" },
-          { value: "cli", label: "Gemini CLI" },
+          { value: "cli", label: "Antigravity CLI" },
           { value: "acp", label: "ACP" },
         ],
-        hint: "Auto uses ACP when prerequisites pass and falls back to Gemini CLI with diagnostics.",
+        hint: "Auto uses ACP when prerequisites pass and falls back to Antigravity CLI with diagnostics.",
       },
       {
         key: "agentCommand",
         label: "ACP server command",
         type: "text",
-        hint: "Optional override for the Gemini ACP server command. Defaults to gemini --acp.",
+        hint: "Optional override for the Antigravity ACP server command. Defaults to agy --acp.",
         meta: acpVisible,
       },
       {

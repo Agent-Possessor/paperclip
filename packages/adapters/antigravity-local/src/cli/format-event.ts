@@ -107,7 +107,7 @@ function printUsage(parsed: Record<string, unknown>) {
   console.log(pc.blue(`tokens: in=${input} out=${output} cached=${cached} cost=$${cost.toFixed(6)}`));
 }
 
-export function printGeminiStreamEvent(raw: string, _debug: boolean): void {
+export function printAntigravityStreamEvent(raw: string, _debug: boolean): void {
   const line = raw.trim();
   if (!line) return;
 
@@ -138,7 +138,7 @@ export function printGeminiStreamEvent(raw: string, _debug: boolean): void {
       const details = [sessionId ? `session: ${sessionId}` : "", model ? `model: ${model}` : ""]
         .filter(Boolean)
         .join(", ");
-      console.log(pc.blue(`Gemini init${details ? ` (${details})` : ""}`));
+      console.log(pc.blue(`Antigravity init${details ? ` (${details})` : ""}`));
       return;
     }
     if (subtype === "error") {

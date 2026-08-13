@@ -20,45 +20,45 @@ function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-function resolveGeminiSkillsHome(config: Record<string, unknown>) {
+function resolveAntigravitySkillsHome(config: Record<string, unknown>) {
   const env =
     typeof config.env === "object" && config.env !== null && !Array.isArray(config.env)
       ? (config.env as Record<string, unknown>)
       : {};
   const configuredHome = asString(env.HOME);
   const home = configuredHome ? path.resolve(configuredHome) : os.homedir();
-  return path.join(home, ".gemini", "skills");
+  return path.join(home, ".gemini", "antigravity-cli", "skills");
 }
 
-async function buildGeminiSkillSnapshot(config: Record<string, unknown>): Promise<AdapterSkillSnapshot> {
+async function buildAntigravitySkillSnapshot(config: Record<string, unknown>): Promise<AdapterSkillSnapshot> {
   const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
   const desiredSkills = resolvePaperclipDesiredSkillNames(config, availableEntries);
-  const skillsHome = resolveGeminiSkillsHome(config);
+  const skillsHome = resolveAntigravitySkillsHome(config);
   const installed = await readInstalledSkillTargets(skillsHome);
   return buildPersistentSkillSnapshot({
-    adapterType: "gemini_local",
+    adapterType: "antigravity_local",
     availableEntries,
     desiredSkills,
     installed,
     skillsHome,
-    locationLabel: "~/.gemini/skills",
-    missingDetail: "Configured but not currently linked into the Gemini skills home.",
+    locationLabel: "~/.gemini/antigravity-cli/skills",
+    missingDetail: "Configured but not currently linked into the Antigravity skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation.",
     externalDetail: "Installed outside Paperclip management.",
   });
 }
 
-export async function listGeminiSkills(ctx: AdapterSkillContext): Promise<AdapterSkillSnapshot> {
-  return buildGeminiSkillSnapshot(ctx.config);
+export async function listAntigravitySkills(ctx: AdapterSkillContext): Promise<AdapterSkillSnapshot> {
+  return buildAntigravitySkillSnapshot(ctx.config);
 }
 
-export async function syncGeminiSkills(
+export async function syncAntigravitySkills(
   ctx: AdapterSkillContext,
   desiredSkills: string[],
 ): Promise<AdapterSkillSnapshot> {
   const availableEntries = await readPaperclipRuntimeSkillEntries(ctx.config, __moduleDir);
   const desiredSet = new Set(desiredSkills);
-  const skillsHome = resolveGeminiSkillsHome(ctx.config);
+  const skillsHome = resolveAntigravitySkillsHome(ctx.config);
   await fs.mkdir(skillsHome, { recursive: true });
   const installed = await readInstalledSkillTargets(skillsHome);
   const availableByRuntimeName = new Map(availableEntries.map((entry) => [entry.runtimeName, entry]));
@@ -77,10 +77,10 @@ export async function syncGeminiSkills(
     await fs.unlink(path.join(skillsHome, name)).catch(() => {});
   }
 
-  return buildGeminiSkillSnapshot(ctx.config);
+  return buildAntigravitySkillSnapshot(ctx.config);
 }
 
-export function resolveGeminiDesiredSkillNames(
+export function resolveAntigravityDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string }>,
 ) {

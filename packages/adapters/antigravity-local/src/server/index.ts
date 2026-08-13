@@ -1,16 +1,16 @@
 export { execute } from "./execute.js";
 export * from "./acp.js";
 export { getConfigSchema } from "./config-schema.js";
-export { listGeminiSkills, syncGeminiSkills } from "./skills.js";
+export { listAntigravitySkills, syncAntigravitySkills } from "./skills.js";
 export { testEnvironment } from "./test.js";
 export {
-  parseGeminiJsonl,
-  isGeminiSessionUnrecoverableError,
-  isGeminiTransientNetworkError,
-  describeGeminiFailure,
-  detectGeminiAuthRequired,
-  detectGeminiQuotaExhausted,
-  isGeminiTurnLimitResult,
+  parseAntigravityJsonl,
+  isAntigravitySessionUnrecoverableError,
+  isAntigravityTransientNetworkError,
+  describeAntigravityFailure,
+  detectAntigravityAuthRequired,
+  detectAntigravityQuotaExhausted,
+  isAntigravityTurnLimitResult,
 } from "./parse.js";
 import type { AdapterSessionCodec } from "@paperclipai/adapter-utils";
 import { sessionCodec as acpxSessionCodec } from "@paperclipai/adapter-utils/acpx-engine/session-codec";

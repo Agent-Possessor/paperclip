@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { CreateConfigValues } from "@paperclipai/adapter-utils";
-import { buildGeminiLocalConfig } from "./build-config.js";
+import { buildAntigravityLocalConfig } from "./build-config.js";
 
 function makeValues(overrides: Partial<CreateConfigValues> = {}): CreateConfigValues {
   return {
-    adapterType: "gemini_local",
+    adapterType: "antigravity_local",
     cwd: "",
     instructionsFilePath: "",
     promptTemplate: "",
@@ -32,37 +32,37 @@ function makeValues(overrides: Partial<CreateConfigValues> = {}): CreateConfigVa
     heartbeatEnabled: false,
     intervalSec: 300,
     ...overrides,
-  };
+  } as CreateConfigValues;
 }
 
-describe("buildGeminiLocalConfig", () => {
+describe("buildAntigravityLocalConfig", () => {
   it("omits engine for the auto default so runtime fallback remains available", () => {
-    const config = buildGeminiLocalConfig(makeValues({ geminiEngine: "auto" }));
+    const config = buildAntigravityLocalConfig(makeValues({ antigravityEngine: "auto" }));
 
     expect(config).not.toHaveProperty("engine");
   });
 
   it("persists explicit engine pins", () => {
-    expect(buildGeminiLocalConfig(makeValues({ geminiEngine: "cli" }))).toMatchObject({ engine: "cli" });
-    expect(buildGeminiLocalConfig(makeValues({ geminiEngine: "acp" }))).toMatchObject({ engine: "acp" });
+    expect(buildAntigravityLocalConfig(makeValues({ antigravityEngine: "cli" }))).toMatchObject({ engine: "cli" });
+    expect(buildAntigravityLocalConfig(makeValues({ antigravityEngine: "acp" }))).toMatchObject({ engine: "acp" });
   });
 
-  it("persists ACP fields when Gemini ACP is selected", () => {
-    const config = buildGeminiLocalConfig(makeValues({
-      geminiEngine: "acp",
-      geminiAcpAgentCommand: "custom-gemini --acp",
-      geminiAcpMode: "oneshot",
-      geminiAcpNonInteractivePermissions: "fail",
-      geminiAcpStateDir: "/tmp/gemini-acp",
-      geminiAcpWarmHandleIdleMs: 30,
+  it("persists ACP fields when Antigravity ACP is selected", () => {
+    const config = buildAntigravityLocalConfig(makeValues({
+      antigravityEngine: "acp",
+      antigravityAcpAgentCommand: "custom-agy --acp",
+      antigravityAcpMode: "oneshot",
+      antigravityAcpNonInteractivePermissions: "fail",
+      antigravityAcpStateDir: "/tmp/antigravity-acp",
+      antigravityAcpWarmHandleIdleMs: 30,
     }));
 
     expect(config).toMatchObject({
       engine: "acp",
-      agentCommand: "custom-gemini --acp",
+      agentCommand: "custom-agy --acp",
       mode: "oneshot",
       nonInteractivePermissions: "fail",
-      stateDir: "/tmp/gemini-acp",
+      stateDir: "/tmp/antigravity-acp",
       warmHandleIdleMs: 30,
     });
   });

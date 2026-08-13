@@ -209,7 +209,7 @@ function readUsage(parsed: Record<string, unknown>) {
   };
 }
 
-export function parseGeminiStdoutLine(line: string, ts: string): TranscriptEntry[] {
+export function parseAntigravityStdoutLine(line: string, ts: string): TranscriptEntry[] {
   const parsed = asRecord(safeJsonParse(line));
   if (!parsed) {
     return [{ kind: "stdout", ts, text: line }];
@@ -225,7 +225,7 @@ export function parseGeminiStdoutLine(line: string, ts: string): TranscriptEntry
     const subtype = asString(parsed.subtype);
     if (subtype === "init") {
       const sessionId = readSessionId(parsed);
-      return [{ kind: "init", ts, model: asString(parsed.model, "gemini"), sessionId }];
+      return [{ kind: "init", ts, model: asString(parsed.model, "antigravity"), sessionId }];
     }
     if (subtype === "error") {
       const text = errorText(parsed.error ?? parsed.message ?? parsed.detail);

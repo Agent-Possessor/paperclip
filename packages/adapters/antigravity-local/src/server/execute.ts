@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import type { Dirent } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,39 +45,38 @@ import {
   isPaperclipRecoveryWakePayload,
   stringifyPaperclipWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  runChildProcess,
 } from "@paperclipai/adapter-utils/server-utils";
-import { DEFAULT_GEMINI_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
+import { DEFAULT_ANTIGRAVITY_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
 import {
-  describeGeminiFailure,
-  detectGeminiAuthRequired,
-  isGeminiTransientNetworkError,
-  isGeminiTurnLimitResult,
-  isGeminiSessionUnrecoverableError,
-  parseGeminiJsonl,
+  describeAntigravityFailure,
+  detectAntigravityAuthRequired,
+  isAntigravityTransientNetworkError,
+  isAntigravityTurnLimitResult,
+  isAntigravitySessionUnrecoverableError,
+  parseAntigravityJsonl,
 } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
 import {
-  createGeminiAcpExecutor,
-  formatGeminiAcpFallbackMessage,
-  resolveGeminiExecutionEngineForRun,
+  createAntigravityAcpExecutor,
+  formatAntigravityAcpFallbackMessage,
+  resolveAntigravityExecutionEngineForRun,
 } from "./acp.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const executeGeminiAcp = createGeminiAcpExecutor();
+const executeAntigravityAcp = createAntigravityAcpExecutor();
 
 function hasNonEmptyEnvValue(env: Record<string, string>, key: string): boolean {
   const raw = env[key];
   return typeof raw === "string" && raw.trim().length > 0;
 }
 
-function resolveGeminiBillingType(env: Record<string, string>): "api" | "subscription" {
+function resolveAntigravityBillingType(env: Record<string, string>): "api" | "subscription" {
   return hasNonEmptyEnvValue(env, "GEMINI_API_KEY") || hasNonEmptyEnvValue(env, "GOOGLE_API_KEY")
     ? "api"
     : "subscription";
 }
 
-function buildGeminiHeadlessEnv(env: Record<string, string>): Record<string, string> {
+function buildAntigravityHeadlessEnv(env: Record<string, string>): Record<string, string> {
   const next = { ...env };
   const term = env.TERM?.trim().toLowerCase();
   if (!term || term === "dumb" || term === "vt100") {
@@ -92,9 +90,9 @@ function buildGeminiHeadlessEnv(env: Record<string, string>): Record<string, str
   return next;
 }
 
-function buildGeminiRuntimeEnv(env: Record<string, string>): Record<string, string> {
+function buildAntigravityRuntimeEnv(env: Record<string, string>): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(ensurePathInEnv({ ...process.env, ...buildGeminiHeadlessEnv(env) })).filter(
+    Object.entries(ensurePathInEnv({ ...process.env, ...buildAntigravityHeadlessEnv(env) })).filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
     ),
   );
@@ -128,16 +126,14 @@ function renderApiAccessNote(env: Record<string, string>): string {
   ].join("\n");
 }
 
-function geminiSkillsHome(): string {
-  return path.join(os.homedir(), ".gemini", "skills");
+function antigravitySkillsHome(): string {
+  return path.join(os.homedir(), ".gemini", "antigravity-cli", "skills");
 }
 
 /**
- * Inject Paperclip skills directly into `~/.gemini/skills/` via symlinks.
- * This avoids needing GEMINI_CLI_HOME overrides, so the CLI naturally finds
- * both its auth credentials and the injected skills in the real home directory.
+ * Inject Paperclip skills directly into `~/.gemini/antigravity-cli/skills/` via symlinks.
  */
-async function ensureGeminiSkillsInjected(
+async function ensureAntigravitySkillsInjected(
   onLog: AdapterExecutionContext["onLog"],
   skillsEntries: Array<{ key: string; runtimeName: string; source: string }>,
   desiredSkillNames?: string[],
@@ -146,13 +142,13 @@ async function ensureGeminiSkillsInjected(
   const selectedEntries = skillsEntries.filter((entry) => desiredSet.has(entry.key));
   if (selectedEntries.length === 0) return;
 
-  const skillsHome = geminiSkillsHome();
+  const skillsHome = antigravitySkillsHome();
   try {
     await fs.mkdir(skillsHome, { recursive: true });
   } catch (err) {
     await onLog(
       "stderr",
-      `[paperclip] Failed to prepare Gemini skills directory ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+      `[paperclip] Failed to prepare Antigravity skills directory ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
     );
     return;
   }
@@ -163,7 +159,7 @@ async function ensureGeminiSkillsInjected(
   for (const skillName of removedSkills) {
     await onLog(
       "stderr",
-      `[paperclip] Removed maintainer-only Gemini skill "${skillName}" from ${skillsHome}\n`,
+      `[paperclip] Removed maintainer-only Antigravity skill "${skillName}" from ${skillsHome}\n`,
     );
   }
 
@@ -175,21 +171,21 @@ async function ensureGeminiSkillsInjected(
       if (result === "skipped") continue;
       await onLog(
         "stderr",
-        `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} Gemini skill: ${entry.key}\n`,
+        `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} Antigravity skill: ${entry.key}\n`,
       );
     } catch (err) {
       await onLog(
         "stderr",
-        `[paperclip] Failed to link Gemini skill "${entry.key}": ${err instanceof Error ? err.message : String(err)}\n`,
+        `[paperclip] Failed to link Antigravity skill "${entry.key}": ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
 }
 
-async function buildGeminiSkillsDir(
+async function buildAntigravitySkillsDir(
   config: Record<string, unknown>,
 ): Promise<string> {
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-gemini-skills-"));
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-skills-"));
   const target = path.join(tmp, "skills");
   await fs.mkdir(target, { recursive: true });
   const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
@@ -202,21 +198,21 @@ async function buildGeminiSkillsDir(
 }
 
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
-  const engineSelection = await resolveGeminiExecutionEngineForRun(ctx);
+  const engineSelection = await resolveAntigravityExecutionEngineForRun(ctx);
   if (engineSelection.engine === "acp") {
     try {
-      return await executeGeminiAcp(ctx);
+      return await executeAntigravityAcp(ctx);
     } catch (err) {
       if (engineSelection.explicit) throw err;
       const reason = err instanceof Error ? err.message : String(err);
       await ctx.onLog(
         "stderr",
-        formatGeminiAcpFallbackMessage(`Gemini ACP startup failed: ${reason}`),
+        formatAntigravityAcpFallbackMessage(`Antigravity ACP startup failed: ${reason}`),
       );
     }
   }
   if (!engineSelection.explicit && engineSelection.fallbackReason) {
-    await ctx.onLog("stderr", formatGeminiAcpFallbackMessage(engineSelection.fallbackReason));
+    await ctx.onLog("stderr", formatAntigravityAcpFallbackMessage(engineSelection.fallbackReason));
   }
 
   const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
@@ -230,8 +226,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     config.promptTemplate,
     DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   );
-  const command = asString(config.command, "gemini");
-  const model = asString(config.model, DEFAULT_GEMINI_LOCAL_MODEL).trim();
+  const command = asString(config.command, "agy");
+  const model = asString(config.model, DEFAULT_ANTIGRAVITY_LOCAL_MODEL).trim();
   const sandbox = asBoolean(config.sandbox, false);
 
   const workspaceContext = parseObject(context.paperclipWorkspace);
@@ -248,14 +244,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     : [];
   const configuredCwd = asString(config.cwd, "");
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
+
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
   const cwd = effectiveWorkspaceCwd || configuredCwd || process.cwd();
   let effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
-  const geminiSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredGeminiSkillNames = resolvePaperclipDesiredSkillNames(config, geminiSkillEntries);
+  const antigravitySkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
+  const desiredAntigravitySkillNames = resolvePaperclipDesiredSkillNames(config, antigravitySkillEntries);
   if (!executionTargetIsRemote) {
-    await ensureGeminiSkillsInjected(onLog, geminiSkillEntries, desiredGeminiSkillNames);
+    await ensureAntigravitySkillsInjected(onLog, antigravitySkillEntries, desiredAntigravitySkillNames);
   }
 
   const envConfig = parseObject(config.env);
@@ -313,8 +310,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (authToken) {
     env.PAPERCLIP_API_KEY = authToken;
   }
-  const runtimeEnv = buildGeminiRuntimeEnv(env);
-  const billingType = resolveGeminiBillingType(runtimeEnv);
+  const runtimeEnv = buildAntigravityRuntimeEnv(env);
+  const billingType = resolveAntigravityBillingType(runtimeEnv);
   const timeoutSec = resolveAdapterExecutionTargetTimeoutSec(
     executionTarget,
     asNumber(config.timeoutSec, 0),
@@ -349,15 +346,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   if (executionTargetIsRemote) {
     try {
-      localSkillsDir = await buildGeminiSkillsDir(config);
+      localSkillsDir = await buildAntigravitySkillsDir(config);
       await onLog(
         "stdout",
-        `[paperclip] Syncing workspace and Gemini runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
+        `[paperclip] Syncing workspace and Antigravity runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
       );
       const preparedExecutionTargetRuntime = await prepareAdapterExecutionTargetRuntime({
         runId,
         target: executionTarget,
-        adapterKey: "gemini",
+        adapterKey: "antigravity",
         timeoutSec,
         workspaceLocalDir: cwd,
         installCommand: SANDBOX_INSTALL_COMMAND,
@@ -405,7 +402,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           onLog,
         }));
       if (remoteHomeDir && preparedExecutionTargetRuntime.assetDirs.skills) {
-        remoteSkillsDir = path.posix.join(remoteHomeDir, ".gemini", "skills");
+        remoteSkillsDir = path.posix.join(remoteHomeDir, ".gemini", "antigravity-cli", "skills");
         await runAdapterExecutionTargetShellCommand(
           runId,
           executionTarget,
@@ -413,27 +410,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           { cwd, env, timeoutSec, graceSec, onLog },
         );
       }
-      // Gemini CLI refuses headless runs without an auth selection persisted in
-      // $HOME/.gemini/settings.json ("Invalid auth method selected."); env vars
-      // alone (GEMINI_DEFAULT_AUTH_TYPE) do not satisfy it. With a managed HOME
-      // the runtime root replaces the image home, so any settings baked into the
-      // image are invisible -- pre-select the api-key auth whenever an API key
-      // is provided. Both settings schema generations are written (legacy
-      // selectedAuthType + current security.auth.selectedType). An existing
-      // settings.json (user-shipped via workspace) is left untouched.
-      // Only the managed HOME (the per-run runtime root) is touched: on
-      // non-managed remote targets remoteHomeDir is the user's real home, where
-      // creating files is out of scope and existing settings remain visible.
-      // Key presence check spans the run env AND the host process env: in the
-      // managed sandbox path the key never enters the adapter's run env -- it
-      // reaches the agent pod via the provider's per-run secret (envKeys
-      // passthrough from the host env), so the host env is the signal here.
+
       const hasGeminiApiKey = Boolean(
         env.GEMINI_API_KEY || env.GOOGLE_API_KEY ||
         process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
       );
       if (managedRemoteHomeDir && hasGeminiApiKey) {
-        const remoteSettingsPath = path.posix.join(managedRemoteHomeDir, ".gemini", "settings.json");
+        const remoteSettingsPath = path.posix.join(managedRemoteHomeDir, ".gemini", "antigravity-cli", "settings.json");
         const authSettingsJson = JSON.stringify({
           selectedAuthType: "gemini-api-key",
           security: { auth: { selectedType: "gemini-api-key" } },
@@ -459,7 +442,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       runId,
       target: runtimeExecutionTarget,
       runtimeRootDir: remoteRuntimeRootDir,
-      adapterKey: "gemini",
+      adapterKey: "antigravity",
       timeoutSec,
       hostApiToken: env.PAPERCLIP_API_KEY,
       onLog,
@@ -481,12 +464,12 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (executionTargetIsRemote && runtimeSessionId && !canResumeSession) {
     await onLog(
       "stdout",
-      `[paperclip] Gemini session "${runtimeSessionId}" does not match the current remote execution identity and will not be resumed in "${effectiveExecutionCwd}". Starting a fresh remote session.\n`,
+      `[paperclip] Antigravity session "${runtimeSessionId}" does not match the current remote execution identity and will not be resumed in "${effectiveExecutionCwd}". Starting a fresh remote session.\n`,
     );
   } else if (runtimeSessionId && !canResumeSession) {
     await onLog(
       "stdout",
-      `[paperclip] Gemini session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".\n`,
+      `[paperclip] Antigravity session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".\n`,
     );
   }
 
@@ -509,9 +492,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
   }
   const commandNotes = (() => {
-    const notes: string[] = ["Prompt is passed to Gemini via --prompt for non-interactive execution."];
+    const notes: string[] = ["Prompt is passed to Antigravity CLI via --prompt for non-interactive execution."];
     notes.push("Added --approval-mode yolo for unattended execution.");
-    notes.push("Set headless terminal/browser env so Gemini fails fast instead of opening interactive auth or color prompts.");
+    notes.push("Set headless terminal/browser env so Antigravity CLI fails fast instead of opening interactive auth or color prompts.");
     if (executionTargetIsRemote) {
       notes.push("Set GEMINI_CLI_TRUST_WORKSPACE=true for remote headless execution.");
     }
@@ -573,7 +556,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const buildArgs = (resumeSessionId: string | null) => {
     const args = ["--output-format", "stream-json"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
-    if (model && model !== DEFAULT_GEMINI_LOCAL_MODEL) args.push("--model", model);
+    if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) args.push("--model", model);
     args.push("--approval-mode", "yolo");
     if (sandbox) {
       args.push("--sandbox");
@@ -587,8 +570,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const runAttempt = async (resumeSessionId: string | null) => {
     const args = buildArgs(resumeSessionId);
-    const invocationEnv = buildGeminiHeadlessEnv(env);
-    const invocationRuntimeEnv = buildGeminiRuntimeEnv(env);
+    const invocationEnv = buildAntigravityHeadlessEnv(env);
+    const invocationRuntimeEnv = buildAntigravityRuntimeEnv(env);
     const loggedEnv = buildInvocationEnvForLogs(invocationEnv, {
       runtimeEnv: invocationRuntimeEnv,
       includeRuntimeKeys: ["HOME"],
@@ -596,7 +579,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     });
     if (onMeta) {
       await onMeta({
-        adapterType: "gemini_local",
+        adapterType: "antigravity_local",
         command: resolvedCommand,
         cwd: effectiveExecutionCwd,
         commandNotes,
@@ -622,7 +605,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     });
     return {
       proc,
-      parsed: parseGeminiJsonl(proc.stdout),
+      parsed: parseAntigravityJsonl(proc.stdout),
     };
   };
 
@@ -635,17 +618,17 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         stdout: string;
         stderr: string;
       };
-      parsed: ReturnType<typeof parseGeminiJsonl>;
+      parsed: ReturnType<typeof parseAntigravityJsonl>;
     },
     clearSessionOnMissingSession = false,
     isRetry = false,
   ): AdapterExecutionResult => {
-    const authMeta = detectGeminiAuthRequired({
+    const authMeta = detectAntigravityAuthRequired({
       parsed: attempt.parsed.resultEvent,
       stdout: attempt.proc.stdout,
       stderr: attempt.proc.stderr,
     });
-    const networkUnavailable = isGeminiTransientNetworkError(attempt.proc.stdout, attempt.proc.stderr);
+    const networkUnavailable = isAntigravityTransientNetworkError(attempt.proc.stdout, attempt.proc.stderr);
 
     if (attempt.proc.timedOut) {
       return {
@@ -654,9 +637,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         timedOut: true,
         errorMessage: `Timed out after ${timeoutSec}s`,
         errorCode: authMeta.requiresAuth
-          ? "gemini_auth_required"
+          ? "antigravity_auth_required"
           : networkUnavailable
-            ? "gemini_network_unavailable"
+            ? "antigravity_network_unavailable"
             : null,
         clearSession: clearSessionOnMissingSession,
       };
@@ -665,20 +648,19 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const parsedError = typeof attempt.parsed.errorMessage === "string" ? attempt.parsed.errorMessage.trim() : "";
     const stderrLine = firstNonEmptyLine(attempt.proc.stderr);
     const structuredFailure = attempt.parsed.resultEvent
-      ? describeGeminiFailure(attempt.parsed.resultEvent)
+      ? describeAntigravityFailure(attempt.parsed.resultEvent)
       : null;
     const fallbackErrorMessage =
       parsedError ||
       structuredFailure ||
       stderrLine ||
-      `Gemini exited with code ${attempt.proc.exitCode ?? -1}`;
+      `Antigravity exited with code ${attempt.proc.exitCode ?? -1}`;
     const failed = (attempt.proc.exitCode ?? 0) !== 0;
-    const clearSessionForTurnLimit = isGeminiTurnLimitResult(
+    const clearSessionForTurnLimit = isAntigravityTurnLimitResult(
       attempt.parsed.resultEvent,
       attempt.proc.exitCode,
     );
 
-    // On retry, don't fall back to old session ID — the old session was stale
     const canFallbackToRuntimeSession = !isRetry;
     const resolvedSessionId = attempt.parsed.sessionId
       ?? (canFallbackToRuntimeSession ? (runtimeSessionId ?? runtime.sessionId ?? null) : null);
@@ -710,11 +692,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       timedOut: false,
       errorMessage: failed ? fallbackErrorMessage : null,
       errorCode: failed && authMeta.requiresAuth
-        ? "gemini_auth_required"
+        ? "antigravity_auth_required"
         : failed && clearSessionForTurnLimit
         ? "max_turns_exhausted"
         : failed && networkUnavailable
-        ? "gemini_network_unavailable"
+        ? "antigravity_network_unavailable"
         : null,
       usage: attempt.parsed.usage,
       sessionId: resolvedSessionId,
@@ -738,11 +720,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       sessionId &&
       !initial.proc.timedOut &&
       (initial.proc.exitCode ?? 0) !== 0 &&
-      isGeminiSessionUnrecoverableError(initial.proc.stdout, initial.proc.stderr)
+      isAntigravitySessionUnrecoverableError(initial.proc.stdout, initial.proc.stderr)
     ) {
       await onLog(
         "stdout",
-        `[paperclip] Gemini resume session "${sessionId}" is unavailable; retrying with a fresh session.\n`,
+        `[paperclip] Antigravity resume session "${sessionId}" is unavailable; retrying with a fresh session.\n`,
       );
       const retry = await runAttempt(null);
       return toResult(retry, true, true);

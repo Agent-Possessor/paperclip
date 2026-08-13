@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseGeminiStdoutLine } from "./parse-stdout.js";
+import { parseAntigravityStdoutLine } from "./parse-stdout.js";
 
 const ts = "2026-05-04T05:43:45.198Z";
 
-describe("parseGeminiStdoutLine", () => {
+describe("parseAntigravityStdoutLine", () => {
   it("renders v0.38 message+role:assistant as an assistant transcript entry", () => {
     const line = JSON.stringify({
       type: "message",
@@ -11,7 +11,7 @@ describe("parseGeminiStdoutLine", () => {
       content: "hello.",
       delta: true,
     });
-    const entries = parseGeminiStdoutLine(line, ts);
+    const entries = parseAntigravityStdoutLine(line, ts);
     expect(entries).toEqual([{ kind: "assistant", ts, text: "hello." }]);
   });
 
@@ -21,7 +21,7 @@ describe("parseGeminiStdoutLine", () => {
       role: "user",
       content: "Respond with hello.",
     });
-    const entries = parseGeminiStdoutLine(line, ts);
+    const entries = parseAntigravityStdoutLine(line, ts);
     expect(entries).toEqual([{ kind: "user", ts, text: "Respond with hello." }]);
   });
 
@@ -30,7 +30,7 @@ describe("parseGeminiStdoutLine", () => {
       type: "assistant",
       message: { content: [{ type: "output_text", text: "legacy hello" }] },
     });
-    const entries = parseGeminiStdoutLine(line, ts);
+    const entries = parseAntigravityStdoutLine(line, ts);
     expect(entries).toEqual([{ kind: "assistant", ts, text: "legacy hello" }]);
   });
 
@@ -45,7 +45,7 @@ describe("parseGeminiStdoutLine", () => {
         cached: 8132,
       },
     });
-    const [entry] = parseGeminiStdoutLine(line, ts);
+    const [entry] = parseAntigravityStdoutLine(line, ts);
     expect(entry).toMatchObject({
       kind: "result",
       inputTokens: 9095,
@@ -62,19 +62,19 @@ describe("parseGeminiStdoutLine", () => {
       status: "error",
       error: "boom",
     });
-    const [entry] = parseGeminiStdoutLine(line, ts);
+    const [entry] = parseAntigravityStdoutLine(line, ts);
     expect(entry).toMatchObject({ kind: "result", isError: true, errors: ["boom"] });
   });
 
   it("ignores message events without an actionable role", () => {
     const line = JSON.stringify({ type: "message", role: "system", content: "ignored" });
-    expect(parseGeminiStdoutLine(line, ts)).toEqual([]);
+    expect(parseAntigravityStdoutLine(line, ts)).toEqual([]);
   });
 
   it("delegates ACPX events to the shared ACPX transcript parser", () => {
     const line = JSON.stringify({ type: "acpx.text_delta", text: "hello from acp" });
 
-    expect(parseGeminiStdoutLine(line, ts)).toEqual([
+    expect(parseAntigravityStdoutLine(line, ts)).toEqual([
       { kind: "assistant", ts, text: "hello from acp", delta: true },
     ]);
   });
