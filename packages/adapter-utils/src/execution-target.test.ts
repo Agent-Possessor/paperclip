@@ -309,7 +309,7 @@ describe("ensureAdapterExecutionTargetRuntimeCommandInstalled", () => {
         remoteCwd: "/remote/workspace",
         runner,
       },
-      installCommand: "npm install -g @google/gemini-cli",
+      installCommand: "npm install -g mock-package",
       cwd: "/local/workspace",
       env: { PATH: "/usr/bin" },
       timeoutSec: 30,
@@ -317,7 +317,7 @@ describe("ensureAdapterExecutionTargetRuntimeCommandInstalled", () => {
 
     expect(runner.execute).toHaveBeenCalledWith(expect.objectContaining({
       command: "sh",
-      args: ["-c", "npm install -g @google/gemini-cli"],
+      args: ["-c", "npm install -g mock-package"],
       cwd: "/remote/workspace",
       env: { PATH: "/usr/bin" },
       timeoutMs: 30_000,
@@ -347,7 +347,7 @@ describe("ensureAdapterExecutionTargetRuntimeCommandInstalled", () => {
           strictHostKeyChecking: true,
         },
       },
-      installCommand: "npm install -g @google/gemini-cli",
+      installCommand: "npm install -g mock-package",
       cwd: "/tmp/local",
       env: {},
     });

@@ -8,7 +8,7 @@ export const DEFAULT_ACP_ENGINE_WARM_HANDLE_IDLE_MS = 0;
 export const ACPX_ADAPTER_AGENT_IDS = {
   claude_local: "claude",
   codex_local: "codex",
-  gemini_local: "gemini",
+  antigravity_local: "antigravity",
   custom_acp: "custom",
 } as const;
 

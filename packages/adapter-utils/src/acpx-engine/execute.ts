@@ -573,8 +573,8 @@ async function resolveBuiltInAgentCommand(input: {
   executionTargetIsRemote: boolean;
 }): Promise<BuiltInAgentCommand | null> {
   const { agent, packageRootDir, executionTargetIsRemote } = input;
-  if (agent === "gemini") {
-    return { command: "gemini --acp", shellCommand: "gemini --acp" };
+  if (agent === "antigravity") {
+    return { command: "agy --acp", shellCommand: "agy --acp" };
   }
   const binName = agent === "claude" ? "claude-agent-acp" : agent === "codex" ? "codex-acp" : null;
   if (!binName) return null;
@@ -616,17 +616,17 @@ export function rewriteGeminiAcpFlagForVersion(commandShell: string, versionPart
     .join(" ");
 }
 
-function geminiAcpCommandTokens(commandShell: string): string[] | null {
+function antigravityAcpCommandTokens(commandShell: string): string[] | null {
   const tokens = commandShell.trim().split(/\s+/);
   const bin = tokens[0];
   if (!bin || bin.startsWith("'") || bin.startsWith('"')) return null;
-  if (path.basename(bin) !== "gemini") return null;
+  if (path.basename(bin) !== "agy" && path.basename(bin) !== "gemini") return null;
   if (!tokens.includes("--acp")) return null;
   return tokens;
 }
 
-async function normalizeGeminiAcpCommandShell(commandShell: string, env: NodeJS.ProcessEnv): Promise<string> {
-  const tokens = geminiAcpCommandTokens(commandShell);
+async function normalizeAntigravityAcpCommandShell(commandShell: string, env: NodeJS.ProcessEnv): Promise<string> {
+  const tokens = antigravityAcpCommandTokens(commandShell);
   if (!tokens) return commandShell;
   let versionParts: number[] | null = null;
   try {
@@ -1036,29 +1036,29 @@ async function prepareCodexSkillRuntime(input: {
   };
 }
 
-function resolveGeminiSkillsHome(config: Record<string, unknown>): string {
+function resolveAntigravitySkillsHome(config: Record<string, unknown>): string {
   const envConfig = parseObject(config.env);
   const configuredHome =
     typeof envConfig.HOME === "string" && envConfig.HOME.trim().length > 0
       ? path.resolve(envConfig.HOME.trim())
       : os.homedir();
-  return path.join(configuredHome, ".gemini", "skills");
+  return path.join(configuredHome, ".gemini", "antigravity-cli", "skills");
 }
 
-async function prepareGeminiSkillRuntime(input: {
+async function prepareAntigravitySkillRuntime(input: {
   config: Record<string, unknown>;
   moduleDir: string;
   onLog: AdapterExecutionContext["onLog"];
 }): Promise<{ identity: Record<string, unknown>; commandNotes: string[] }> {
   const { selectedSkills, desiredSkillNames } = await resolveSelectedRuntimeSkills(input.config, input.moduleDir);
-  const skillSetKey = await buildSkillSetKey({ skills: selectedSkills, label: "gemini" });
-  const skillsHome = resolveGeminiSkillsHome(input.config);
+  const skillSetKey = await buildSkillSetKey({ skills: selectedSkills, label: "antigravity" });
+  const skillsHome = resolveAntigravitySkillsHome(input.config);
   await fs.mkdir(skillsHome, { recursive: true });
 
   const allowedSkillNames = selectedSkills.map((entry) => entry.runtimeName);
   const removedSkills = await removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames);
   for (const skillName of removedSkills) {
-    await input.onLog("stdout", `[paperclip] Removed maintainer-only ACPX Gemini skill "${skillName}" from ${skillsHome}\n`);
+    await input.onLog("stdout", `[paperclip] Removed maintainer-only ACPX Antigravity skill "${skillName}" from ${skillsHome}\n`);
   }
 
   for (const entry of selectedSkills) {
@@ -1068,7 +1068,7 @@ async function prepareGeminiSkillRuntime(input: {
       if (result === "created" || result === "repaired") {
         await input.onLog(
           "stdout",
-          `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome}\n`,
+          `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Antigravity skill "${entry.runtimeName}" into ${skillsHome}\n`,
         );
       }
     } catch (err) {
@@ -1076,27 +1076,27 @@ async function prepareGeminiSkillRuntime(input: {
         const result = await materializePaperclipSkillCopy(entry.source, target);
         await input.onLog(
           "stdout",
-          `[paperclip] Copied ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
+          `[paperclip] Copied ACPX Antigravity skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
         );
         continue;
       }
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to link ACPX Gemini skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[paperclip] Failed to link ACPX Antigravity skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
 
   return {
     identity: {
-      mode: "gemini",
+      mode: "antigravity",
       skillSetKey,
       desiredSkillNames,
       selectedSkills: selectedSkills.map((entry) => entry.runtimeName).sort(),
       skillsHome,
     },
     commandNotes: selectedSkills.length > 0
-      ? [`Prepared ${selectedSkills.length} ACPX Gemini skill(s) at ${skillsHome}.`]
+      ? [`Prepared ${selectedSkills.length} ACPX Antigravity skill(s) at ${skillsHome}.`]
       : [],
   };
 }
@@ -1657,8 +1657,8 @@ async function buildRuntime(input: {
     );
     skillsIdentity = preparedSkills.identity;
     skillCommandNotes.push(...preparedSkills.commandNotes);
-  } else if (acpxAgent === "gemini") {
-    const preparedSkills = await prepareGeminiSkillRuntime({
+  } else if (acpxAgent === "antigravity") {
+    const preparedSkills = await prepareAntigravitySkillRuntime({
       config,
       moduleDir: input.engine.moduleDir,
       onLog: input.ctx.onLog,
@@ -1684,8 +1684,8 @@ async function buildRuntime(input: {
   });
   let agentCommand = configuredCommand || builtInCommand?.command || null;
   let agentCommandShell = configuredCommand || builtInCommand?.shellCommand || "";
-  if (acpxAgent === "gemini" && agentCommandShell) {
-    const normalized = await normalizeGeminiAcpCommandShell(
+  if (acpxAgent === "antigravity" && agentCommandShell) {
+    const normalized = await normalizeAntigravityAcpCommandShell(
       agentCommandShell,
       ensurePathInEnv({ ...process.env, ...env }),
     );
