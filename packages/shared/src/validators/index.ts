@@ -591,11 +591,6 @@ export {
 } from "./goal.js";
 
 export {
-  applyOnboardingSeedSchema,
-  type ApplyOnboardingSeed,
-} from "./onboarding-seed.js";
-
-export {
   createApprovalSchema,
   resolveApprovalSchema,
   requestApprovalRevisionSchema,
