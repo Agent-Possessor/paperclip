@@ -436,4 +436,134 @@ describe("antigravity execute", () => {
       await fs.rm(root, { recursive: true, force: true });
     }
   });
+
+  it("passes --effort for gemini-3 reasoning models and configured effort", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-effort-"));
+    const workspace = path.join(root, "workspace");
+    const commandPath = path.join(root, "agy");
+    const capturePath = path.join(root, "capture.json");
+    await fs.mkdir(workspace, { recursive: true });
+    await writeFakeAntigravityCommand(commandPath);
+
+    const previousHome = process.env.HOME;
+    process.env.HOME = root;
+
+    try {
+      await execute({
+        runId: "run-effort",
+        agent: { id: "a1", companyId: "c1", name: "G", adapterType: "antigravity_local", adapterConfig: { engine: "cli" } },
+        runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+        config: {
+          engine: "cli",
+          command: commandPath,
+          model: "gemini-3.5-flash",
+          cwd: workspace,
+          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+        },
+        context: {},
+        authToken: "t",
+        onLog: async () => {},
+      });
+
+      const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
+      expect(capture.argv).toContain("--model");
+      expect(capture.argv).toContain("gemini-3.5-flash");
+      expect(capture.argv).toContain("--effort");
+      expect(capture.argv).toContain("medium");
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = previousHome;
+      }
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("passes --print-timeout 24h when unconstrained and configured seconds when timeoutSec is set", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-antigravity-timeout-"));
+    const workspace = path.join(root, "workspace");
+    const commandPath = path.join(root, "agy");
+    const capturePath = path.join(root, "capture.json");
+    await fs.mkdir(workspace, { recursive: true });
+    await writeFakeAntigravityCommand(commandPath);
+
+    const previousHome = process.env.HOME;
+    process.env.HOME = root;
+
+    try {
+      // 1. Default (unconstrained) -> 24h
+      await execute({
+        runId: "run-timeout-default",
+        agent: { id: "a1", companyId: "c1", name: "G", adapterType: "antigravity_local", adapterConfig: { engine: "cli" } },
+        runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+        config: {
+          engine: "cli",
+          command: commandPath,
+          cwd: workspace,
+          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+        },
+        context: {},
+        authToken: "t",
+        onLog: async () => {},
+      });
+
+      let capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
+      expect(capture.argv).toContain("--print-timeout");
+      const idx1 = capture.argv.indexOf("--print-timeout");
+      expect(capture.argv[idx1 + 1]).toBe("24h");
+
+      // 2. Configured timeoutSec -> e.g. 900s
+      await execute({
+        runId: "run-timeout-configured",
+        agent: { id: "a1", companyId: "c1", name: "G", adapterType: "antigravity_local", adapterConfig: { engine: "cli", timeoutSec: 900 } },
+        runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+        config: {
+          engine: "cli",
+          command: commandPath,
+          cwd: workspace,
+          timeoutSec: 900,
+          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+        },
+        context: {},
+        authToken: "t",
+        onLog: async () => {},
+      });
+
+      capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
+      expect(capture.argv).toContain("--print-timeout");
+      const idx2 = capture.argv.indexOf("--print-timeout");
+      expect(capture.argv[idx2 + 1]).toBe("900s");
+
+      // 3. Explicit extraArgs -> retains explicit value
+      await execute({
+        runId: "run-timeout-extra",
+        agent: { id: "a1", companyId: "c1", name: "G", adapterType: "antigravity_local", adapterConfig: { engine: "cli" } },
+        runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+        config: {
+          engine: "cli",
+          command: commandPath,
+          cwd: workspace,
+          extraArgs: ["--print-timeout", "45m"],
+          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+        },
+        context: {},
+        authToken: "t",
+        onLog: async () => {},
+      });
+
+      capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
+      const occurrences = capture.argv.filter((arg) => arg === "--print-timeout").length;
+      expect(occurrences).toBe(1);
+      const idx3 = capture.argv.indexOf("--print-timeout");
+      expect(capture.argv[idx3 + 1]).toBe("45m");
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = previousHome;
+      }
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
 });
