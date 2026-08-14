@@ -228,6 +228,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   );
   const command = asString(config.command, "agy");
   const model = asString(config.model, DEFAULT_ANTIGRAVITY_LOCAL_MODEL).trim();
+  const configuredEffort = asString(
+    config.effort,
+    asString(config.thinkingEffort, asString(config.reasoningEffort, asString(config.modelReasoningEffort, ""))),
+  ).trim().toLowerCase();
+  const effort =
+    configuredEffort ||
+    (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL && model.startsWith("gemini-3") ? "medium" : "");
   const sandbox = asBoolean(config.sandbox, false);
 
   const workspaceContext = parseObject(context.paperclipWorkspace);
@@ -494,9 +501,22 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const commandNotes = (() => {
     const notes: string[] = ["Prompt is passed to Antigravity CLI via --prompt for non-interactive execution."];
     notes.push("Added --dangerously-skip-permissions for unattended execution.");
+    if (effort) {
+      notes.push(`Set reasoning effort to ${effort}.`);
+    }
     notes.push("Set headless terminal/browser env so Antigravity CLI fails fast instead of opening interactive auth or color prompts.");
     if (executionTargetIsRemote) {
       notes.push("Set GEMINI_CLI_TRUST_WORKSPACE=true for remote headless execution.");
+    }
+    const hasExplicitPrintTimeout = extraArgs.some(
+      (arg) => arg === "--print-timeout" || arg.startsWith("--print-timeout="),
+    );
+    if (!hasExplicitPrintTimeout) {
+      if (timeoutSec > 0) {
+        notes.push(`Set print timeout to ${timeoutSec}s to match execution timeout.`);
+      } else {
+        notes.push("Set print timeout to 24h for unconstrained execution.");
+      }
     }
     if (!instructionsFilePath) return notes;
     if (instructionsPrefix.length > 0) {
@@ -556,7 +576,22 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const buildArgs = (resumeSessionId: string | null) => {
     const args = ["--output-format", "stream-json"];
     if (resumeSessionId) args.push("--conversation", resumeSessionId);
-    if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) args.push("--model", model);
+    if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) {
+      args.push("--model", model);
+      if (effort) args.push("--effort", effort);
+    } else if (effort) {
+      args.push("--effort", effort);
+    }
+    const hasExplicitPrintTimeout = extraArgs.some(
+      (arg) => arg === "--print-timeout" || arg.startsWith("--print-timeout="),
+    );
+    if (!hasExplicitPrintTimeout) {
+      if (timeoutSec > 0) {
+        args.push("--print-timeout", `${timeoutSec}s`);
+      } else {
+        args.push("--print-timeout", "24h");
+      }
+    }
     args.push("--dangerously-skip-permissions");
     if (sandbox) {
       args.push("--sandbox");

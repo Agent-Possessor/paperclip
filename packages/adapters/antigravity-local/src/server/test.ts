@@ -189,6 +189,13 @@ export async function testEnvironment(
       });
     } else {
       const model = asString(config.model, DEFAULT_ANTIGRAVITY_LOCAL_MODEL).trim();
+      const configuredEffort = asString(
+        config.effort,
+        asString(config.thinkingEffort, asString(config.reasoningEffort, asString(config.modelReasoningEffort, ""))),
+      ).trim().toLowerCase();
+      const effort =
+        configuredEffort ||
+        (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL && model.startsWith("gemini-3") ? "medium" : "");
       const approvalMode = asString(config.approvalMode, asBoolean(config.yolo, false) ? "yolo" : "default");
       const sandbox = asBoolean(config.sandbox, false);
       const helloProbeTimeoutSec = Math.max(1, asNumber(config.helloProbeTimeoutSec, 60));
@@ -198,8 +205,19 @@ export async function testEnvironment(
         return asStringArray(config.args);
       })();
 
-      const args = ["--output-format", "stream-json", "--prompt", "Respond with hello."];
-      if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) args.push("--model", model);
+      const hasExplicitPrintTimeout = extraArgs.some(
+        (arg) => arg === "--print-timeout" || arg.startsWith("--print-timeout="),
+      );
+      const args = ["--output-format", "stream-json"];
+      if (!hasExplicitPrintTimeout) {
+        args.push("--print-timeout", `${helloProbeTimeoutSec}s`);
+      }
+      if (model && model !== DEFAULT_ANTIGRAVITY_LOCAL_MODEL) {
+        args.push("--model", model);
+        if (effort) args.push("--effort", effort);
+      } else if (effort) {
+        args.push("--effort", effort);
+      }
       if (approvalMode !== "default" || asBoolean(config.dangerouslySkipPermissions, false) || asBoolean(config.yolo, false)) {
         args.push("--dangerously-skip-permissions");
       }
@@ -207,6 +225,7 @@ export async function testEnvironment(
         args.push("--sandbox");
       }
       if (extraArgs.length > 0) args.push(...extraArgs);
+      args.push("--prompt", "Respond with hello.");
 
       const probe = await runAdapterExecutionTargetProcess(
         runId,

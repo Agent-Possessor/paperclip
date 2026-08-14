@@ -21,6 +21,7 @@ export function buildAntigravityLocalConfig(v: CreateConfigValues): Record<strin
     ac.warmHandleIdleMs = v.antigravityAcpWarmHandleIdleMs ?? 0;
   }
   ac.model = v.model || DEFAULT_ANTIGRAVITY_LOCAL_MODEL;
+  if (v.thinkingEffort) ac.effort = v.thinkingEffort;
   ac.timeoutSec = 0;
   ac.graceSec = 15;
   const env = buildAdapterEnvConfig(v.envBindings, v.envVars);
