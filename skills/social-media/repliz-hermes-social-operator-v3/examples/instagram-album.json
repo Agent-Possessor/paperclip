@@ -1,0 +1,11 @@
+{
+  "title": "",
+  "description": "Example caption approved only for testing.",
+  "type": "album",
+  "medias": [
+    {"alt":"Example image one", "customThumbnail":false, "type":"image", "thumbnail":"https://cdn.example.com/a-thumb.jpg", "url":"https://cdn.example.com/a.jpg"},
+    {"alt":"Example image two", "customThumbnail":false, "type":"image", "thumbnail":"https://cdn.example.com/b-thumb.jpg", "url":"https://cdn.example.com/b.jpg"}
+  ],
+  "accountId": "REPLACE_AFTER_ACCOUNT_DISCOVERY",
+  "scheduleAt": "2026-06-27T09:00:00+07:00"
+}
