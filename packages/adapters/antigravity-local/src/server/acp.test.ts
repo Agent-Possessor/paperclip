@@ -255,12 +255,22 @@ describe("antigravity_local ACP lane", () => {
     const commandPath = path.join(root, "bin", "agy");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
+    await fs.chmod(commandPath, 0o755);
     setNodeVersion("v20.0.0");
 
-    expect(resolveAntigravityExecutionEngine({})).toEqual({ engine: "acp", explicit: false });
+    expect(resolveAntigravityExecutionEngine({})).toEqual({ engine: "cli", explicit: false });
+    expect(resolveAntigravityExecutionEngine({ agentCommand: commandPath })).toEqual({ engine: "acp", explicit: false });
+    // Without agentCommand, auto resolution defaults directly to CLI because agy has no native --acp flag
     await expect(
       resolveAntigravityExecutionEngineForRun({
         config: { command: commandPath },
+        executionTarget: null,
+      }),
+    ).resolves.toEqual({ engine: "cli", explicit: false });
+    // With configured agentCommand, ACP is used
+    await expect(
+      resolveAntigravityExecutionEngineForRun({
+        config: { command: commandPath, agentCommand: commandPath },
         executionTarget: null,
       }),
     ).resolves.toEqual({ engine: "acp", explicit: false });
@@ -278,7 +288,7 @@ describe("antigravity_local ACP lane", () => {
     setNodeVersion("v19.9.0");
     await expect(
       resolveAntigravityExecutionEngineForRun({
-        config: { command: commandPath },
+        config: { command: commandPath, agentCommand: commandPath },
         executionTarget: null,
       }),
     ).resolves.toMatchObject({
@@ -326,7 +336,7 @@ describe("antigravity_local ACP lane", () => {
     setNodeVersion("v20.0.0");
     await expect(
       resolveAntigravityExecutionEngineForRun({
-        config: {},
+        config: { agentCommand: "agy --acp" },
         executionTarget: {
           kind: "remote",
           transport: "sandbox",

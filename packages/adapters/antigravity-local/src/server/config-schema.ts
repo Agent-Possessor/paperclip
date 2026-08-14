@@ -14,13 +14,13 @@ export function getConfigSchema(): AdapterConfigSchema {
         key: "engine",
         label: "Execution engine",
         type: "select",
-        default: "auto",
+        default: "cli",
         options: [
-          { value: "auto", label: "Auto (ACP preferred)" },
+          { value: "auto", label: "Auto (CLI default)" },
           { value: "cli", label: "Antigravity CLI" },
           { value: "acp", label: "ACP" },
         ],
-        hint: "Auto uses ACP when prerequisites pass and falls back to Antigravity CLI with diagnostics.",
+        hint: "Auto uses Antigravity CLI natively, or ACP when a custom agentCommand is configured.",
       },
       {
         key: "agentCommand",

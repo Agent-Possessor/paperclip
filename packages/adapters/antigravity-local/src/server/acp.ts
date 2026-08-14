@@ -56,21 +56,27 @@ type AntigravityAcpExecutorOptions = Omit<
 
 type AntigravityAcpExecutor = (ctx: AdapterExecutionContext) => Promise<AdapterExecutionResult>;
 
-function normalizeEngine(value: unknown): AntigravityEngineSelection {
+function normalizeEngine(value: unknown, config?: Record<string, unknown>): AntigravityEngineSelection {
   const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (raw === "acp") return { engine: "acp", explicit: true };
   if (raw === "cli") return { engine: "cli", explicit: true };
-  return { engine: "acp", explicit: false };
+  const configuredAgentCommand = firstNonEmptyString(
+    config?.agentCommand,
+    config?.antigravityAcpAgentCommand,
+    config?.acpAgentCommand,
+  );
+  if (configuredAgentCommand) return { engine: "acp", explicit: false };
+  return { engine: "cli", explicit: false };
 }
 
 export function resolveAntigravityExecutionEngine(config: Record<string, unknown>): AntigravityEngineSelection {
-  return normalizeEngine(config.engine);
+  return normalizeEngine(config.engine, config);
 }
 
 export async function resolveAntigravityExecutionEngineForRun(
   input: AntigravityEngineResolutionInput,
 ): Promise<AntigravityEngineSelection> {
-  const selection = normalizeEngine(input.config.engine);
+  const selection = normalizeEngine(input.config.engine, input.config);
   if (selection.explicit || selection.engine !== "acp") return selection;
 
   const fallbackReason = await defaultAntigravityAcpFallbackReason(input);
@@ -314,6 +320,14 @@ async function defaultAntigravityAcpFallbackReason(
   }
   if (!nodeVersionMeetsAntigravityAcpMinimum()) {
     return `Node ${process.version} does not satisfy Antigravity ACP's Node >=${MIN_ACP_NODE_VERSION} prerequisite.`;
+  }
+  const configuredAgentCommand = firstNonEmptyString(
+    input.config.agentCommand,
+    input.config.antigravityAcpAgentCommand,
+    input.config.acpAgentCommand,
+  );
+  if (!configuredAgentCommand) {
+    return "Antigravity CLI (agy) does not support native ACP mode (--acp flag undefined); configure agentCommand to specify a custom ACP server.";
   }
   const command = resolveAntigravityAcpCommand(input.config);
   if (!(await commandIsResolvable(command, resolveConfigPath(input.config), input))) {
