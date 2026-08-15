@@ -4,6 +4,7 @@ import { printCodexStreamEvent } from "@paperclipai/adapter-codex-local/cli";
 import { printCursorStreamEvent } from "@paperclipai/adapter-cursor-local/cli";
 import { printCursorCloudEvent } from "@paperclipai/adapter-cursor-cloud/cli";
 import { printAntigravityStreamEvent } from "@paperclipai/adapter-antigravity-local/cli";
+import { printKiroStreamEvent } from "@paperclipai/adapter-kiro-local/cli";
 import { printGrokStreamEvent } from "@paperclipai/adapter-grok-local/cli";
 import { formatStdoutEvent as printHermesGatewayStreamEvent } from "@paperclipai/hermes-paperclip-adapter/gateway/cli";
 import { printHermesStreamEvent } from "@paperclipai/hermes-paperclip-adapter/cli";
@@ -48,6 +49,11 @@ const antigravityLocalCLIAdapter: CLIAdapterModule = {
   formatStdoutEvent: printAntigravityStreamEvent,
 };
 
+const kiroLocalCLIAdapter: CLIAdapterModule = {
+  type: "kiro_local",
+  formatStdoutEvent: printKiroStreamEvent,
+};
+
 const grokLocalCLIAdapter: CLIAdapterModule = {
   type: "grok_local",
   formatStdoutEvent: printGrokStreamEvent,
@@ -77,6 +83,7 @@ const adaptersByType = new Map<string, CLIAdapterModule>(
     cursorLocalCLIAdapter,
     cursorCloudCLIAdapter,
     antigravityLocalCLIAdapter,
+    kiroLocalCLIAdapter,
     grokLocalCLIAdapter,
     hermesGatewayCLIAdapter,
     hermesLocalCLIAdapter,
