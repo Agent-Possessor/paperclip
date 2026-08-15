@@ -2130,7 +2130,8 @@ function sessionConfigOptions(prepared: AcpxPreparedRuntime): Array<{ key: strin
   if (
     prepared.requestedModel &&
     prepared.acpxAgent !== "claude" &&
-    prepared.acpxAgent !== "codex"
+    prepared.acpxAgent !== "codex" &&
+    prepared.acpxAgent !== "kiro"
   ) {
     options.push({ key: "model", value: prepared.requestedModel });
   }
@@ -3359,7 +3360,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 mode: prepared.mode,
                 cwd: prepared.cwd,
                 resumeSessionId,
-                sessionOptions: { env: prepared.env },
+                sessionOptions: {
+                  env: prepared.env,
+                  ...(prepared.acpxAgent === "kiro" && prepared.requestedModel
+                    ? { model: prepared.requestedModel }
+                    : {}),
+                },
               });
               ensureSessionMs = now() - ensureSessionStart;
               return established;
@@ -3390,7 +3396,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 agent: prepared.acpxAgent,
                 mode: prepared.mode,
                 cwd: prepared.cwd,
-                sessionOptions: { env: prepared.env },
+                sessionOptions: {
+                  env: prepared.env,
+                  ...(prepared.acpxAgent === "kiro" && prepared.requestedModel
+                    ? { model: prepared.requestedModel }
+                    : {}),
+                },
               });
               retryEnsureSessionMs = now() - ensureSessionStart;
               return established;

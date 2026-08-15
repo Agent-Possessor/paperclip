@@ -517,6 +517,20 @@ describe("shared ACPX engine runtime behavior", () => {
     ]);
   });
 
+  it("sets Kiro model at session startup instead of through session config options", async () => {
+    const { configOptions, sessionInputs, meta } = await runExecutor({
+      agent: "kiro",
+      agentCommand: "kiro-cli acp",
+      model: "glm-5",
+    });
+
+    expect(configOptions).toEqual([]);
+    expect(sessionInputs[0]?.sessionOptions).toMatchObject({
+      model: "glm-5",
+    });
+    expect(meta[0]?.commandNotes).toContain("Requested ACPX model: glm-5.");
+  });
+
   it("does not inject CODEX_CONFIG or session config when Codex overrides are absent", async () => {
     const { configOptions, meta } = await runExecutor({ agent: "codex" });
 

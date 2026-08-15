@@ -804,6 +804,30 @@ describe("renderPaperclipWakePrompt", () => {
     });
   });
 
+  it("renders retry failed run liveness continuation details", () => {
+    const prompt = renderPaperclipWakePrompt({
+      reason: "retry_failed_run",
+      commentWindow: { requestedCount: 0, includedCount: 0, missingCount: 0 },
+      comments: [],
+      fallbackFetchNeeded: false,
+      livenessContinuation: {
+        sourceRunId: "run-1",
+        state: "retry_failed_run",
+        reason: "manual retry requested",
+        instruction:
+          "This is a retry of failed run run-1. Failure summary: adapter failed. Do not assume issue assignment if issueId or taskId are missing.",
+        attempt: null,
+        maxAttempts: null,
+      },
+    });
+
+    expect(prompt).toContain("Run liveness continuation:");
+    expect(prompt).toContain("- source run: run-1");
+    expect(prompt).toContain("- liveness state: retry_failed_run");
+    expect(prompt).toContain("- reason: manual retry requested");
+    expect(prompt).toContain("Do not assume issue assignment if issueId or taskId are missing.");
+  });
+
   it("omits the issue description from non-assignment resume deltas and leaves a fetch breadcrumb", () => {
     const basePayload = {
       issue: {
