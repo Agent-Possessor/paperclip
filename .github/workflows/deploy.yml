@@ -68,17 +68,26 @@ jobs:
               exit 1
             fi
 
+            # Determine the env-file path since docker-compose.yml is inside docker/
+            # and by default compose looks for .env in the same folder as the compose file.
+            ENV_ARG=""
+            if [ -f .env ]; then
+              ENV_ARG="--env-file .env"
+            elif [ -f docker/.env ]; then
+              ENV_ARG="--env-file docker/.env"
+            fi
+
             echo "🧹 4. Stopping the previous Compose deployment and removing orphans..."
-            sudo docker compose -f docker/docker-compose.yml down --remove-orphans
+            sudo docker compose $ENV_ARG -f docker/docker-compose.yml down --remove-orphans
 
             echo "🐳 5. Deploying Docker Containers..."
-            PAPERCLIP_UID=$(id -u) PAPERCLIP_GID=$(id -g) sudo -E docker compose -f docker/docker-compose.yml up -d --build --force-recreate --remove-orphans
+            PAPERCLIP_UID=$(id -u) PAPERCLIP_GID=$(id -g) sudo -E docker compose $ENV_ARG -f docker/docker-compose.yml up -d --build --force-recreate --remove-orphans
 
             echo "📊 6. Checking active Docker containers..."
-            sudo docker compose -f docker/docker-compose.yml ps || true
+            sudo docker compose $ENV_ARG -f docker/docker-compose.yml ps || true
 
             echo "🔐 7. Verifying container runtime credentials..."
-            sudo docker compose -f docker/docker-compose.yml exec -T server sh -c 'test -n "$BETTER_AUTH_SECRET"'
+            sudo docker compose $ENV_ARG -f docker/docker-compose.yml exec -T server sh -c 'test -n "$BETTER_AUTH_SECRET"'
 
             echo "🩺 8. Waiting for the Paperclip server to be healthy..."
             SERVER_READY=0
@@ -93,7 +102,7 @@ jobs:
 
             if [ "$SERVER_READY" -ne 1 ]; then
               echo "❌ Paperclip server did not become healthy in time."
-              sudo docker compose -f docker/docker-compose.yml logs --tail 120 server || true
+              sudo docker compose $ENV_ARG -f docker/docker-compose.yml logs --tail 120 server || true
               exit 1
             fi
 
