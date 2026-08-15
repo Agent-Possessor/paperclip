@@ -84,10 +84,15 @@ RUN echo "cli-tools-epoch: ${CLI_TOOLS_CACHE_EPOCH}" \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq unzip \
   && rm -rf /var/lib/apt/lists/* \
-  && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+  && npm install --global --omit=dev --allow-scripts=@anthropic-ai/claude-code,opencode-ai @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
   && export PATH="/root/.local/bin:$PATH" \
   && HOME=/paperclip curl -fsSL https://antigravity.google/cli/install.sh | bash \
-  && HOME=/paperclip curl -fsSL https://cli.kiro.dev/install | bash \
+  && attempt=1; while [ "$attempt" -le 3 ]; do \
+       if HOME=/paperclip curl -fsSL https://cli.kiro.dev/install | bash; then break; fi; \
+       attempt=$((attempt + 1)); \
+       if [ "$attempt" -gt 3 ]; then exit 1; fi; \
+       sleep $((attempt * 5)); \
+     done \
   && chown node:node /paperclip
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
