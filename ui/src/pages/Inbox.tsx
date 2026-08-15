@@ -239,6 +239,29 @@ function readIssueIdFromRun(run: HeartbeatRun): string | null {
   return null;
 }
 
+function buildRetryLivenessContinuation(
+  run: Pick<HeartbeatRun, "id" | "error" | "errorCode" | "stderrExcerpt" | "stdoutExcerpt">,
+) {
+  const failureSummary =
+    firstNonEmptyLine(run.error) ??
+    firstNonEmptyLine(run.stderrExcerpt) ??
+    firstNonEmptyLine(run.stdoutExcerpt) ??
+    firstNonEmptyLine(run.errorCode) ??
+    "retry_failed_run";
+
+  return {
+    sourceRunId: run.id,
+    state: "retry_failed_run",
+    reason: firstNonEmptyLine(run.errorCode) ?? "manual retry requested",
+    instruction: [
+      `This is a retry of failed run ${run.id}.`,
+      `Failure summary: ${failureSummary}.`,
+      "Do not assume issue assignment if issueId or taskId are missing.",
+      "Inspect the source run log first, then continue from the last durable step.",
+    ].join(" "),
+  };
+}
+
 function nonEmptyLabel(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -1692,6 +1715,7 @@ export function Inbox() {
         if (typeof context.taskId === "string" && context.taskId) payload.taskId = context.taskId;
         if (typeof context.taskKey === "string" && context.taskKey) payload.taskKey = context.taskKey;
       }
+      Object.assign(payload, buildRetryLivenessContinuation(run));
       const result = await agentsApi.wakeup(run.agentId, {
         source: "on_demand",
         triggerDetail: "manual",

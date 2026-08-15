@@ -348,6 +348,29 @@ function asNonEmptyString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function buildRetryLivenessContinuation(
+  run: Pick<HeartbeatRun, "id" | "error" | "errorCode" | "stderrExcerpt" | "stdoutExcerpt">,
+) {
+  const failureSummary =
+    asNonEmptyString(run.error) ??
+    asNonEmptyString(run.stderrExcerpt) ??
+    asNonEmptyString(run.stdoutExcerpt) ??
+    asNonEmptyString(run.errorCode) ??
+    "retry_failed_run";
+
+  return {
+    sourceRunId: run.id,
+    state: "retry_failed_run",
+    reason: asNonEmptyString(run.errorCode) ?? "manual retry requested",
+    instruction: [
+      `This is a retry of failed run ${run.id}.`,
+      `Failure summary: ${failureSummary}.`,
+      "Do not assume issue assignment if issueId or taskId are missing.",
+      "Inspect the source run log first, then continue from the last durable step.",
+    ].join(" "),
+  };
+}
+
 export function buildHeartbeatProgressLogLine(
   payload: Record<string, unknown>,
   fallbackTimestamp: string,
@@ -3169,8 +3192,9 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
     if (issueId) payload.issueId = issueId;
     if (taskId) payload.taskId = taskId;
     if (taskKey) payload.taskKey = taskKey;
+    Object.assign(payload, buildRetryLivenessContinuation(run));
     return payload;
-  }, [run.contextSnapshot]);
+  }, [run.contextSnapshot, run.error, run.errorCode, run.id, run.stderrExcerpt, run.stdoutExcerpt]);
   const retryRun = useMutation({
     mutationFn: async () => {
       const result = await agentsApi.wakeup(run.agentId, {

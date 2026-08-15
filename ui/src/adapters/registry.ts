@@ -4,6 +4,7 @@ import { codexLocalUIAdapter } from "./codex-local";
 import { cursorCloudUIAdapter } from "./cursor-cloud";
 import { cursorLocalUIAdapter } from "./cursor";
 import { antigravityLocalUIAdapter } from "./antigravity-local";
+import { kiroLocalUIAdapter } from "./kiro-local";
 import { grokLocalUIAdapter } from "./grok-local";
 import { hermesGatewayUIAdapter } from "./hermes-gateway";
 import { hermesLocalUIAdapter } from "./hermes-local";
@@ -56,6 +57,7 @@ function registerBuiltInUIAdapters() {
     codexLocalUIAdapter,
     cursorCloudUIAdapter,
     antigravityLocalUIAdapter,
+    kiroLocalUIAdapter,
     grokLocalUIAdapter,
     hermesGatewayUIAdapter,
     hermesLocalUIAdapter,
