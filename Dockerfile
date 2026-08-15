@@ -79,11 +79,14 @@ WORKDIR /app
 # (the single most expensive layer: four CLI toolchains + apt, per arch) can
 # never hit the layer cache and rebuilds on every build.
 RUN echo "cli-tools-epoch: ${CLI_TOOLS_CACHE_EPOCH}" \
-  && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai @google/gemini-cli@latest \
+  && mkdir -p /paperclip \
+  && chown node:node /paperclip \
+  && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+  && HOME=/paperclip curl -fsSL https://antigravity.google/cli/install.sh | bash \
+  && HOME=/paperclip curl -fsSL https://cli.kiro.dev/install | bash \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /paperclip \
   && chown node:node /paperclip
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
@@ -105,8 +108,8 @@ ENV NODE_ENV=production \
   PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
   PAPERCLIP_DEPLOYMENT_MODE=authenticated \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
-  OPENCODE_ALLOW_ALL_MODELS=true \
-  GEMINI_SANDBOX=false
+  PATH=/paperclip/.local/bin:/root/.local/bin:${PATH} \
+  OPENCODE_ALLOW_ALL_MODELS=true
 
 EXPOSE 3100
 
