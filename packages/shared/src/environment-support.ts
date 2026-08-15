@@ -42,6 +42,7 @@ const REMOTE_MANAGED_ADAPTERS = new Set<AgentAdapterType>([
   "cursor",
   "gemini_local",
   "grok_local",
+  "kiro_local",
   "opencode_local",
   "pi_local",
 ]);
