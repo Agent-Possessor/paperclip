@@ -1,0 +1,100 @@
+name: Auto Deploy Paperclip (Docker Mode)
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production Server via Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Docker Deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: ${{ secrets.PAPERCLIP_TOOL_ACTION_SIGNING_SECRET }}
+          PAPERCLIP_PUBLIC_URL: ${{ secrets.PAPERCLIP_PUBLIC_URL }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || '22' }}
+          command_timeout: 15m
+          envs: BETTER_AUTH_SECRET,PAPERCLIP_TOOL_ACTION_SIGNING_SECRET,PAPERCLIP_PUBLIC_URL
+          script: |
+            set -e
+            echo "🚀 Starting Paperclip Auto-Deployment (Docker Mode)..."
+
+            PROJECT_DIR="/home/ubuntu/app/paperclip"
+            if [ -d "$PROJECT_DIR" ]; then
+              cd "$PROJECT_DIR"
+            else
+              echo "⚠️ Directory $PROJECT_DIR not found, using current directory..."
+            fi
+
+            echo "📦 1. Stashing local custom changes..."
+            git stash save "Auto-stash before deployment $(date +'%Y-%m-%d %H:%M:%S')" || true
+
+            echo "🔄 2. Fetching & Pulling latest code from master branch..."
+            git fetch origin master
+            git merge origin/master --no-edit || git rebase origin/master
+
+            echo "🧩 3. Restoring local custom changes..."
+            git stash pop || true
+
+            # Prefer GitHub Actions secrets. When they are not configured,
+            # unset the empty forwarded values so Docker Compose can fall back
+            # to PROJECT_DIR/.env or PROJECT_DIR/docker/.env on deployments that manage secrets on-host.
+            if [ -z "${BETTER_AUTH_SECRET:-}" ]; then
+              unset BETTER_AUTH_SECRET
+            fi
+            if [ -z "${PAPERCLIP_TOOL_ACTION_SIGNING_SECRET:-}" ]; then
+              unset PAPERCLIP_TOOL_ACTION_SIGNING_SECRET
+            fi
+            if [ -z "${PAPERCLIP_PUBLIC_URL:-}" ]; then
+              unset PAPERCLIP_PUBLIC_URL
+            fi
+
+            # docker compose also reads PROJECT_DIR/.env / PROJECT_DIR/docker/.env.
+            # Do not print or source that file: it may contain unrelated production secrets.
+            # This check only confirms that one of the supported secret sources contains a non-empty Better Auth key.
+            if [ -z "${BETTER_AUTH_SECRET:-}" ] && \
+               ! grep -Eq '^BETTER_AUTH_SECRET=.+$' .env 2>/dev/null && \
+               ! grep -Eq '^BETTER_AUTH_SECRET=.+$' docker/.env 2>/dev/null; then
+              echo "❌ Missing BETTER_AUTH_SECRET. Configure the GitHub Actions secret, PROJECT_DIR/.env, or PROJECT_DIR/docker/.env on the VPS."
+              exit 1
+            fi
+
+            echo "🧹 4. Stopping the previous Compose deployment and removing orphans..."
+            sudo docker compose -f docker/docker-compose.yml down --remove-orphans
+
+            echo "🐳 5. Deploying Docker Containers..."
+            PAPERCLIP_UID=$(id -u) PAPERCLIP_GID=$(id -g) sudo -E docker compose -f docker/docker-compose.yml up -d --build --force-recreate --remove-orphans
+
+            echo "📊 6. Checking active Docker containers..."
+            sudo docker compose -f docker/docker-compose.yml ps || true
+
+            echo "🔐 7. Verifying container runtime credentials..."
+            sudo docker compose -f docker/docker-compose.yml exec -T server sh -c 'test -n "$BETTER_AUTH_SECRET"'
+
+            echo "🩺 8. Waiting for the Paperclip server to be healthy..."
+            SERVER_READY=0
+            for attempt in $(seq 1 30); do
+              HEALTH_STATUS=$(curl -fsS http://127.0.0.1:3100/api/health 2>/dev/null || true)
+              if printf '%s' "$HEALTH_STATUS" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"ok"'; then
+                SERVER_READY=1
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$SERVER_READY" -ne 1 ]; then
+              echo "❌ Paperclip server did not become healthy in time."
+              sudo docker compose -f docker/docker-compose.yml logs --tail 120 server || true
+              exit 1
+            fi
+
+            echo "✅ Deployment complete! Paperclip running safely in Docker."
