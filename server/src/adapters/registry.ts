@@ -72,6 +72,17 @@ import {
   modelProfiles as antigravityModelProfiles,
 } from "@paperclipai/adapter-antigravity-local";
 import {
+  execute as kiroExecute,
+  testEnvironment as kiroTestEnvironment,
+  sessionCodec as kiroSessionCodec,
+  getConfigSchema as getKiroConfigSchema,
+} from "@paperclipai/adapter-kiro-local/server";
+import {
+  agentConfigurationDoc as kiroAgentConfigurationDoc,
+  models as kiroModels,
+  modelProfiles as kiroModelProfiles,
+} from "@paperclipai/adapter-kiro-local";
+import {
   execute as grokExecute,
   listGrokSkills,
   syncGrokSkills,
@@ -356,6 +367,41 @@ const antigravityLocalAdapter: ServerAdapterModule = {
   getConfigSchema: getAntigravityConfigSchema,
 };
 
+const kiroLocalAdapter: ServerAdapterModule = {
+  type: "kiro_local",
+  execute: kiroExecute,
+  testEnvironment: kiroTestEnvironment,
+  acp: {
+    agentId: "kiro",
+    skillsMode: "unsupported",
+    prerequisites: {
+      nodeRange: ">=20.0.0",
+      packages: [],
+    },
+  },
+  sessionCodec: kiroSessionCodec,
+  sessionManagement: getAdapterSessionManagement("kiro_local") ?? undefined,
+  models: kiroModels,
+  modelProfiles: kiroModelProfiles,
+  supportsLocalAgentJwt: true,
+  supportsInstructionsBundle: true,
+  instructionsPathKey: "instructionsFilePath",
+  requiresMaterializedRuntimeSkills: false,
+  getRuntimeCommandSpec: (config) => {
+    const command = readConfiguredCommand(config, "kiro-cli");
+    return {
+      command,
+      detectCommand: command,
+      installCommand:
+        command === "kiro-cli"
+          ? 'if ! command -v kiro-cli >/dev/null 2>&1; then curl -fsSL https://cli.kiro.dev/install | bash; fi'
+          : null,
+    };
+  },
+  agentConfigurationDoc: kiroAgentConfigurationDoc,
+  getConfigSchema: getKiroConfigSchema,
+};
+
 const grokLocalAdapter: ServerAdapterModule = {
   type: "grok_local",
   execute: grokExecute,
@@ -452,6 +498,7 @@ function registerBuiltInAdapters() {
     cursorCloudAdapter,
     cursorLocalAdapter,
     antigravityLocalAdapter,
+    kiroLocalAdapter,
     grokLocalAdapter,
     hermesGatewayAdapter,
     hermesLocalAdapter,

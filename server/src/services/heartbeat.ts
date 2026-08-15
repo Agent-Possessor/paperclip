@@ -351,6 +351,14 @@ const LIVENESS_BOOKKEEPING_ACTIVITY_ACTIONS = [
   "environment.lease_released",
 ];
 const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
+const RETRY_FAILED_RUN_CONTEXT_KEYS = [
+  "livenessContinuationAttempt",
+  "livenessContinuationMaxAttempts",
+  "livenessContinuationSourceRunId",
+  "livenessContinuationState",
+  "livenessContinuationReason",
+  "livenessContinuationInstruction",
+] as const;
 const WAKE_COMMENT_IDS_KEY = "wakeCommentIds";
 const PAPERCLIP_WAKE_PAYLOAD_KEY = "paperclipWake";
 const PAPERCLIP_AGENT_MESSAGE_KEY = "paperclipAgentMessage";
@@ -407,6 +415,7 @@ const GIT_SENSITIVE_LOCAL_ADAPTER_TYPES = new Set([
   "cursor",
   "antigravity_local",
   "grok_local",
+  "kiro_local",
   "hermes_local",
   "opencode_local",
   "pi_local",
@@ -3362,7 +3371,7 @@ function createAdapterRuntimeMcpAccess(
   });
 }
 
-const MANAGED_MCP_LOCAL_ADAPTERS = new Set(["codex_local"]);
+const MANAGED_MCP_LOCAL_ADAPTERS = new Set(["codex_local", "kiro_local"]);
 
 function adapterSupportsManagedMcpConfig(adapterType: string): boolean {
   return MANAGED_MCP_LOCAL_ADAPTERS.has(adapterType);
@@ -5337,6 +5346,13 @@ function enrichWakeContextSnapshot(input: {
   }
   if (!readNonEmptyString(contextSnapshot["wakeTriggerDetail"]) && triggerDetail) {
     contextSnapshot.wakeTriggerDetail = triggerDetail;
+  }
+  if (readNonEmptyString(contextSnapshot["wakeReason"]) === "retry_failed_run") {
+    for (const key of RETRY_FAILED_RUN_CONTEXT_KEYS) {
+      if (payload && Object.prototype.hasOwnProperty.call(payload, key) && contextSnapshot[key] === undefined) {
+        contextSnapshot[key] = payload[key];
+      }
+    }
   }
   normalizeModelProfileWakeContext({ contextSnapshot, payload });
   normalizeInteractionContinuationWakeContext(contextSnapshot, payload);
@@ -10227,7 +10243,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     if (context.processTopology === "detached" || context.executionEngine === "cli") {
       return false;
     }
-    if (!["claude_local", "codex_local", "antigravity_local"].includes(input.adapterType)) {
+    if (!["claude_local", "codex_local", "antigravity_local", "kiro_local"].includes(input.adapterType)) {
       return false;
     }
     return readNonEmptyString(parseObject(input.adapterConfig).engine) !== "cli";
