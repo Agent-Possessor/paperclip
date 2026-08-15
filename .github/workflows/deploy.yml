@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT || '22' }}
-          command_timeout: 15m
+          command_timeout: 45m
           envs: BETTER_AUTH_SECRET,PAPERCLIP_TOOL_ACTION_SIGNING_SECRET,PAPERCLIP_PUBLIC_URL
           script: |
             set -e
