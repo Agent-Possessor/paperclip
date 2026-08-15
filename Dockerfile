@@ -81,12 +81,13 @@ WORKDIR /app
 RUN echo "cli-tools-epoch: ${CLI_TOOLS_CACHE_EPOCH}" \
   && mkdir -p /paperclip \
   && chown node:node /paperclip \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends openssh-client jq unzip \
+  && rm -rf /var/lib/apt/lists/* \
   && npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+  && export PATH="/root/.local/bin:$PATH" \
   && HOME=/paperclip curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && HOME=/paperclip curl -fsSL https://cli.kiro.dev/install | bash \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends openssh-client jq \
-  && rm -rf /var/lib/apt/lists/* \
   && chown node:node /paperclip
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
