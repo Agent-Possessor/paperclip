@@ -73,6 +73,8 @@ import {
 } from "@paperclipai/adapter-antigravity-local";
 import {
   execute as kiroExecute,
+  listKiroSkills,
+  syncKiroSkills,
   testEnvironment as kiroTestEnvironment,
   sessionCodec as kiroSessionCodec,
   getConfigSchema as getKiroConfigSchema,
@@ -380,6 +382,8 @@ const kiroLocalAdapter: ServerAdapterModule = {
     },
   },
   sessionCodec: kiroSessionCodec,
+  listSkills: listKiroSkills,
+  syncSkills: syncKiroSkills,
   sessionManagement: getAdapterSessionManagement("kiro_local") ?? undefined,
   models: kiroModels,
   modelProfiles: kiroModelProfiles,
