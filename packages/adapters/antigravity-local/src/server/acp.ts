@@ -31,7 +31,7 @@ import {
   asString,
   parseObject,
 } from "@paperclipai/adapter-utils/server-utils";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
+import { DEFAULT_ANTIGRAVITY_LOCAL_MODEL } from "../index.js";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRootDir = path.resolve(moduleDir, "../..");
@@ -119,7 +119,7 @@ export function buildGeminiAcpConfig(config: Record<string, unknown>): Record<st
     ...(stateDir ? { stateDir } : {}),
   };
   const model = asString(next.model, "").trim();
-  if (!model || model === DEFAULT_GEMINI_LOCAL_MODEL) delete next.model;
+  if (!model || model === DEFAULT_ANTIGRAVITY_LOCAL_MODEL) delete next.model;
   return next;
 }
 
@@ -512,3 +512,11 @@ export async function testGeminiAcpEnvironment(
     testedAt: new Date().toISOString(),
   };
 }
+
+export const resolveAntigravityExecutionEngine = resolveGeminiExecutionEngine;
+export const resolveAntigravityExecutionEngineForRun = resolveGeminiExecutionEngineForRun;
+export const formatAntigravityAcpFallbackMessage = formatGeminiAcpFallbackMessage;
+export const buildAntigravityAcpConfig = buildGeminiAcpConfig;
+export const createAntigravityAcpExecutor = createGeminiAcpExecutor;
+export const nodeVersionMeetsAntigravityAcpMinimum = nodeVersionMeetsGeminiAcpMinimum;
+export const testAntigravityAcpEnvironment = testGeminiAcpEnvironment;

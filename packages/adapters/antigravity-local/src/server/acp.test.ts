@@ -581,7 +581,7 @@ describe("antigravity_local ACP lane", () => {
       };
     };
 
-    const execute = createGeminiAcpExecutor({
+    const execute = createAntigravityAcpExecutor({
       createRuntime: (options) => {
         Object.assign(runtime.options, options);
         return runtime as never;
