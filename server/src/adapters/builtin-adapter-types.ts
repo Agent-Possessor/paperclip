@@ -9,6 +9,7 @@ export const BUILTIN_ADAPTER_TYPES = new Set([
   "cursor",
   "gemini_local",
   "grok_local",
+  "freebuff_local",
   "kiro_local",
   "hermes_gateway",
   "hermes_local",

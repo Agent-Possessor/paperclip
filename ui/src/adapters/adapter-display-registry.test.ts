@@ -9,6 +9,7 @@ describe("adapter display registry", () => {
     expect(getAdapterLabel("acpx_local")).toBe("ACPX (retired)");
     expect(getAdapterLabel("cursor")).toBe("Cursor");
     expect(getAdapterLabel("antigravity_local")).toBe("Antigravity CLI");
+    expect(getAdapterLabel("freebuff_local")).toBe("Freebuff");
     expect(getAdapterLabel("grok_local")).toBe("Grok Build");
     expect(getAdapterLabel("hermes_local")).toBe("Hermes");
     expect(getAdapterLabel("hermes_gateway")).toBe("Hermes Gateway");
@@ -21,6 +22,7 @@ describe("adapter display registry", () => {
       acpx_local: "ACPX (retired)",
       cursor: "Cursor",
       antigravity_local: "Antigravity CLI",
+      freebuff_local: "Freebuff",
       grok_local: "Grok Build",
       hermes_local: "Hermes",
       hermes_gateway: "Hermes Gateway",

@@ -279,6 +279,13 @@ describe("server adapter registry", () => {
         source: "adapter_default",
       }),
     ]);
+    await expect(listAdapterModelProfiles("freebuff_local")).resolves.toEqual([
+      expect.objectContaining({
+        key: "cheap",
+        adapterConfig: expect.objectContaining({ model: "minimax-m3" }),
+        source: "adapter_default",
+      }),
+    ]);
     await expect(listAdapterModelProfiles("opencode_local")).resolves.toEqual([
       expect.objectContaining({
         key: "cheap",
@@ -294,6 +301,12 @@ describe("server adapter registry", () => {
       }),
     ]);
     await expect(listAdapterModelProfiles("pi_local")).resolves.toEqual([]);
+  });
+
+  it("exposes the conservative Freebuff model list", async () => {
+    await expect(listAdapterModels("freebuff_local")).resolves.toEqual([
+      { id: "minimax-m3", label: "Freebuff MiniMax M3 (default)" },
+    ]);
   });
 
   it("wraps built-in npm runtime installs with the sandbox-aware install helper", () => {
@@ -316,6 +329,11 @@ describe("server adapter registry", () => {
       command: "agy",
       detectCommand: "agy",
       installCommand: "if ! command -v 'agy' >/dev/null 2>&1; then curl -fsSL https://antigravity.google/cli/install.sh | bash; fi",
+    });
+    expect(findActiveServerAdapter("freebuff_local")?.getRuntimeCommandSpec?.({})).toEqual({
+      command: "freebuff",
+      detectCommand: "freebuff",
+      installCommand: `if ! command -v 'freebuff' >/dev/null 2>&1; then ${buildSandboxNpmInstallCommand("freebuff")}; fi`,
     });
     expect(findActiveServerAdapter("opencode_local")?.getRuntimeCommandSpec?.({})).toEqual({
       command: "opencode",

@@ -11,7 +11,9 @@ import {
   RotateCcw,
   Trash2,
   CheckCircle2,
+  Download,
 } from "lucide-react";
+import { stringify } from "yaml";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -232,6 +234,7 @@ export function AgentActionButtons({
       beforeNavigateRef.current?.() !== false
     );
   }
+  const [exporting, setExporting] = useState(false);
 
   const resolvedCompanyId = companyId ?? agent.companyId;
   const canonicalAgentRef = agentRouteRef(agent);
@@ -331,6 +334,69 @@ export function AgentActionButtons({
     duplicateAgent.mutate();
   }, [agent.name, duplicateAgent]);
 
+  const handleExportAgent = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
+    setMoreOpen(false);
+    try {
+      // 1. Fetch instructions bundle
+      const instructionsBundle = await loadDuplicateInstructionsBundle(agent.id, resolvedCompanyId);
+      // 2. Fetch skills
+      const skillsSnapshot = await agentsApi.skills(agent.id, resolvedCompanyId);
+      
+      // 3. Construct export object
+      const exportObject = {
+        apiVersion: "paperclip.excitech.id/v1",
+        kind: "Agent",
+        metadata: {
+          name: agent.name,
+          role: agent.role,
+          title: agent.title ?? undefined,
+          icon: agent.icon ?? undefined,
+        },
+        spec: {
+          adapterType: agent.adapterType,
+          adapterConfig: agent.adapterConfig,
+          runtimeConfig: agent.runtimeConfig,
+          defaultEnvironmentId: agent.defaultEnvironmentId ?? undefined,
+          budgetMonthlyCents: agent.budgetMonthlyCents,
+          permissions: agent.permissions,
+          skills: skillsSnapshot.desiredSkills,
+          instructionsBundle: instructionsBundle ? {
+            entryFile: instructionsBundle.entryFile,
+            files: Object.entries(instructionsBundle.files).map(([path, content]) => ({
+              path,
+              content,
+            })),
+          } : undefined,
+        },
+      };
+
+      // 4. Convert to YAML
+      const yamlString = stringify(exportObject);
+
+      // 5. Download file
+      const blob = new Blob([yamlString], { type: "text/yaml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      // Sanitize name for file system
+      const safeName = agent.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      link.download = `${safeName}-agent.yaml`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      pushToast({ title: "Agent exported", body: `Exported ${agent.name} config.`, tone: "success" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to export agent";
+      reportError(message);
+    } finally {
+      setExporting(false);
+    }
+  }, [agent, resolvedCompanyId, reportError, pushToast, exporting]);
+
   const resetTaskSession = useMutation({
     mutationFn: () => agentsApi.resetSession(agent.id, null, resolvedCompanyId ?? undefined),
     onSuccess: () => {
@@ -427,6 +493,18 @@ export function AgentActionButtons({
               <Copy className="h-3 w-3" />
             )}
             Duplicate Agent
+          </button>
+          <button
+            className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"
+            disabled={exporting}
+            onClick={handleExportAgent}
+          >
+            {exporting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
+            Export YAML
           </button>
           <button
             className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"

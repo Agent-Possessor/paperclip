@@ -17,7 +17,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Shield } from "lucide-react";
+import { Shield, Upload } from "lucide-react";
+import { parse } from "yaml";
 import { cn, agentUrl } from "../lib/utils";
 import { roleLabels } from "../components/agent-config-primitives";
 import {
@@ -78,6 +79,84 @@ export function NewAgent() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [testAgentAction, setTestAgentAction] = useState<(() => void) | null>(null);
+  const [importedInstructions, setImportedInstructions] = useState<{
+    entryFile: string;
+    files: Array<{ path: string; content: string }>;
+  } | null>(null);
+
+  const handleImportYaml = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFormError(null);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = parse(text) as any;
+        if (!parsed || parsed.kind !== "Agent") {
+          throw new Error("Invalid agent YAML file format.");
+        }
+
+        const metadata = parsed.metadata || {};
+        const spec = parsed.spec || {};
+
+        if (metadata.name) setName(metadata.name);
+        if (metadata.title !== undefined) setTitle(metadata.title || "");
+        if (metadata.role) setRole(metadata.role);
+
+        if (spec.adapterType) {
+          const defaults = createValuesForAdapterType(spec.adapterType);
+          const nextConfigValues = { ...defaults };
+
+          if (spec.adapterConfig) {
+            Object.assign(nextConfigValues, spec.adapterConfig);
+          }
+
+          if (spec.runtimeConfig?.modelProfiles?.cheap) {
+            const cheapProfile = spec.runtimeConfig.modelProfiles.cheap;
+            nextConfigValues.cheapModelEnabled = cheapProfile.enabled === true;
+            if (cheapProfile.adapterConfig?.model) {
+              nextConfigValues.cheapModel = cheapProfile.adapterConfig.model;
+            }
+          }
+
+          if (spec.runtimeConfig?.heartbeat) {
+            const heartbeat = spec.runtimeConfig.heartbeat;
+            if (heartbeat.enabled !== undefined) {
+              nextConfigValues.heartbeatEnabled = heartbeat.enabled === true;
+            }
+            if (heartbeat.intervalSec !== undefined) {
+              nextConfigValues.intervalSec = heartbeat.intervalSec;
+            }
+          }
+
+          setConfigValues(nextConfigValues);
+        }
+
+        if (spec.permissions) {
+          setPermissions(spec.permissions);
+        }
+
+        if (Array.isArray(spec.skills)) {
+          setSelectedSkillKeys(spec.skills);
+        }
+
+        if (spec.instructionsBundle) {
+          setImportedInstructions({
+            entryFile: spec.instructionsBundle.entryFile || "AGENTS.md",
+            files: Array.isArray(spec.instructionsBundle.files) ? spec.instructionsBundle.files : [],
+          });
+        } else {
+          setImportedInstructions(null);
+        }
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Failed to parse YAML file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
   const [testAgentState, setTestAgentState] = useState({ disabled: true, pending: false });
   const [testAgentFeedback, setTestAgentFeedback] = useState<{
     errorMessage: string | null;
@@ -171,8 +250,8 @@ export function NewAgent() {
         return;
       }
     }
-    createAgent.mutate(
-      buildNewAgentHirePayload({
+    createAgent.mutate({
+      ...buildNewAgentHirePayload({
         name,
         effectiveRole,
         title,
@@ -182,7 +261,8 @@ export function NewAgent() {
         adapterConfig: buildAdapterConfig(),
         permissions,
       }),
-    );
+      ...(importedInstructions ? { instructionsBundle: importedInstructions } : {}),
+    });
   }
 
   const availableSkills = (companySkills ?? []).filter((skill) => !skill.key.startsWith("paperclipai/paperclip/"));
@@ -214,11 +294,25 @@ export function NewAgent() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold">New Agent</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Advanced agent configuration
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">New Agent</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Advanced agent configuration
+          </p>
+        </div>
+        <div>
+          <label className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium cursor-pointer hover:bg-accent/50 transition-colors">
+            <Upload className="h-3.5 w-3.5" />
+            Import YAML
+            <input
+              type="file"
+              accept=".yaml,.yml,.json"
+              className="hidden"
+              onChange={handleImportYaml}
+            />
+          </label>
+        </div>
       </div>
 
       <div className="border border-border">

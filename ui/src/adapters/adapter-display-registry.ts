@@ -84,6 +84,12 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     description: "Antigravity CLI harness",
     icon: Gem,
   },
+  freebuff_local: {
+    label: "Freebuff",
+    description: "Freebuff CLI harness",
+    icon: Terminal,
+    recommended: true,
+  },
   kiro_local: {
     label: "Kiro",
     description: "Kiro CLI harness",

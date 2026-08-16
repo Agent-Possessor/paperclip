@@ -38,6 +38,11 @@ describe("ui adapter registry", () => {
     expect(listUIAdapters().some((adapter) => adapter.type === "external_test")).toBe(true);
   });
 
+  it("includes the built-in Freebuff adapter in the visual UI registry", () => {
+    expect(listUIAdapters().some((adapter) => adapter.type === "freebuff_local")).toBe(true);
+    expect(getUIAdapter("freebuff_local").label).toBe("Freebuff");
+  });
+
   it("falls back to the process parser for unknown types after unregistering", () => {
     registerUIAdapter(externalUIAdapter);
 

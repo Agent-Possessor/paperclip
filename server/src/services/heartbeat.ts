@@ -476,6 +476,7 @@ const GIT_SENSITIVE_LOCAL_ADAPTER_TYPES = new Set([
   "codex_local",
   "cursor",
   "antigravity_local",
+  "freebuff_local",
   "grok_local",
   "kiro_local",
   "hermes_local",

@@ -84,7 +84,8 @@ RUN echo "cli-tools-epoch: ${CLI_TOOLS_CACHE_EPOCH}" \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq unzip \
   && rm -rf /var/lib/apt/lists/* \
-  && npm install --global --omit=dev --allow-scripts=@anthropic-ai/claude-code,opencode-ai @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+  && npm install --global --omit=dev --allow-scripts=@anthropic-ai/claude-code,opencode-ai @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai freebuff \
+  && command -v freebuff >/dev/null 2>&1 \
   && export PATH="/root/.local/bin:$PATH" \
   && HOME=/paperclip curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && attempt=1; while [ "$attempt" -le 3 ]; do \

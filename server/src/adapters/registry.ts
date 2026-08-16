@@ -72,6 +72,17 @@ import {
   modelProfiles as antigravityModelProfiles,
 } from "@paperclipai/adapter-antigravity-local";
 import {
+  execute as freebuffExecute,
+  testEnvironment as freebuffTestEnvironment,
+  sessionCodec as freebuffSessionCodec,
+  getConfigSchema as getFreebuffConfigSchema,
+} from "@paperclipai/adapter-freebuff-local/server";
+import {
+  agentConfigurationDoc as freebuffAgentConfigurationDoc,
+  models as freebuffModels,
+  modelProfiles as freebuffModelProfiles,
+} from "@paperclipai/adapter-freebuff-local";
+import {
   execute as kiroExecute,
   listKiroSkills,
   syncKiroSkills,
@@ -369,6 +380,22 @@ const antigravityLocalAdapter: ServerAdapterModule = {
   getConfigSchema: getAntigravityConfigSchema,
 };
 
+const freebuffLocalAdapter: ServerAdapterModule = {
+  type: "freebuff_local",
+  execute: freebuffExecute,
+  testEnvironment: freebuffTestEnvironment,
+  sessionCodec: freebuffSessionCodec,
+  models: freebuffModels,
+  modelProfiles: freebuffModelProfiles,
+  supportsLocalAgentJwt: true,
+  supportsInstructionsBundle: true,
+  instructionsPathKey: "instructionsFilePath",
+  requiresMaterializedRuntimeSkills: false,
+  getRuntimeCommandSpec: (config) => buildNpmRuntimeCommandSpec(config, "freebuff", "freebuff"),
+  agentConfigurationDoc: freebuffAgentConfigurationDoc,
+  getConfigSchema: getFreebuffConfigSchema,
+};
+
 const kiroLocalAdapter: ServerAdapterModule = {
   type: "kiro_local",
   execute: kiroExecute,
@@ -502,6 +529,7 @@ function registerBuiltInAdapters() {
     cursorCloudAdapter,
     cursorLocalAdapter,
     antigravityLocalAdapter,
+    freebuffLocalAdapter,
     kiroLocalAdapter,
     grokLocalAdapter,
     hermesGatewayAdapter,

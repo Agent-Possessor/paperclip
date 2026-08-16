@@ -50,6 +50,7 @@
     "@paperclipai/adapter-cursor-cloud": "workspace:*",
     "@paperclipai/adapter-cursor-local": "workspace:*",
     "@paperclipai/adapter-antigravity-local": "workspace:*",
+    "@paperclipai/adapter-freebuff-local": "workspace:*",
     "@paperclipai/adapter-grok-local": "workspace:*",
     "@paperclipai/adapter-kiro-local": "workspace:*",
     "@paperclipai/adapter-openclaw-gateway": "workspace:*",

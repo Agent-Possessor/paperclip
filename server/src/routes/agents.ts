@@ -243,6 +243,7 @@ export function agentRoutes(
     codex_local: "instructionsFilePath",
     droid_local: "instructionsFilePath",
     antigravity_local: "instructionsFilePath",
+    freebuff_local: "instructionsFilePath",
     opencode_local: "instructionsFilePath",
     cursor: "instructionsFilePath",
     pi_local: "instructionsFilePath",
@@ -1693,6 +1694,10 @@ export function agentRoutes(
     }
     if (adapterType === "antigravity_local" && !asNonEmptyString(next.model)) {
       next.model = DEFAULT_ANTIGRAVITY_LOCAL_MODEL;
+      return ensureGatewayDeviceKey(adapterType, next);
+    }
+    if (adapterType === "freebuff_local" && !asNonEmptyString(next.model)) {
+      next.model = "minimax-m3";
       return ensureGatewayDeviceKey(adapterType, next);
     }
     if (adapterType === "opencode_local" && !asNonEmptyString(next.model)) {

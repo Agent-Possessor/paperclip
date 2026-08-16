@@ -1280,7 +1280,7 @@ export function AgentDetail() {
             <p className="text-amber-900/90 dark:text-amber-100/90">
               {agent.name} cannot accept tasks or start runs until its reporting chain is repaired.
             </p>
-            <p className="break-words font-mono text-xs text-amber-900/80 dark:text-amber-100/80">
+            <p className="wrap-break-word font-mono text-xs text-amber-900/80 dark:text-amber-100/80">
               {formatOrgChainHealthPath(agent)}
             </p>
             {agent.orgChainHealth?.repairGuidance ? (
@@ -4283,7 +4283,7 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
           </div>
         )}
         {logError && (
-          <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-xs text-red-700 dark:text-red-300">
+          <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/6 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             {logError}
           </div>
         )}
