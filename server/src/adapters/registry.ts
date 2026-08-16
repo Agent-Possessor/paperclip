@@ -373,7 +373,7 @@ const kiroLocalAdapter: ServerAdapterModule = {
   testEnvironment: kiroTestEnvironment,
   acp: {
     agentId: "kiro",
-    skillsMode: "unsupported",
+    skillsMode: "ephemeral",
     prerequisites: {
       nodeRange: ">=20.0.0",
       packages: [],
