@@ -114,6 +114,7 @@ import {
 } from "../services/setup-token-session.js";
 import type { DeploymentMode } from "@paperclipai/shared";
 import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
+import { DEFAULT_FREEBUFF_LOCAL_MODEL } from "@paperclipai/adapter-freebuff-local";
 import {
   checkStagedCredentialReadiness,
   promoteDeviceLoginCredential,
@@ -1697,7 +1698,7 @@ export function agentRoutes(
       return ensureGatewayDeviceKey(adapterType, next);
     }
     if (adapterType === "freebuff_local" && !asNonEmptyString(next.model)) {
-      next.model = "minimax-m3";
+      next.model = DEFAULT_FREEBUFF_LOCAL_MODEL;
       return ensureGatewayDeviceKey(adapterType, next);
     }
     if (adapterType === "opencode_local" && !asNonEmptyString(next.model)) {

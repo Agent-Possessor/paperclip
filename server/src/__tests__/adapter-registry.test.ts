@@ -282,7 +282,7 @@ describe("server adapter registry", () => {
     await expect(listAdapterModelProfiles("freebuff_local")).resolves.toEqual([
       expect.objectContaining({
         key: "cheap",
-        adapterConfig: expect.objectContaining({ model: "minimax-m3" }),
+        adapterConfig: expect.objectContaining({ model: "deepseek-v4-flash" }),
         source: "adapter_default",
       }),
     ]);
@@ -305,7 +305,8 @@ describe("server adapter registry", () => {
 
   it("exposes the conservative Freebuff model list", async () => {
     await expect(listAdapterModels("freebuff_local")).resolves.toEqual([
-      { id: "minimax-m3", label: "Freebuff MiniMax M3 (default)" },
+      { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash (default)" },
+      { id: "mimo-2.5", label: "MiMo 2.5" },
     ]);
   });
 
