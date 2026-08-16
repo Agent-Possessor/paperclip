@@ -2039,6 +2039,82 @@ describe("IssueProperties", () => {
 
     act(() => rerenderedRoot.unmount());
   });
+
+  it("searches the server for parent candidates so a lower-priority match past the default page stays selectable", async () => {
+    const onUpdate = vi.fn();
+    // The default list is priority-first and caps at 500 rows, so a low-priority
+    // match past that cap never enters the client list. Model that gap: the default
+    // page returns only a high-priority candidate, and the server search with `q`
+    // returns the low-priority match that the default page hides.
+    const defaultPageCandidate = createIssue({
+      id: "issue-2",
+      identifier: "PAP-2",
+      title: "High priority candidate",
+      status: "in_progress",
+      priority: "high",
+    });
+    const lowPriorityMatch = createIssue({
+      id: "issue-900",
+      identifier: "PAP-900",
+      title: "Low priority needle",
+      status: "todo",
+      priority: "low",
+    });
+    mockIssuesApi.list.mockImplementation((_companyId: string, filters?: { q?: string; limit?: number }) => {
+      if (filters?.q === "needle") return Promise.resolve([lowPriorityMatch]);
+      return Promise.resolve([defaultPageCandidate]);
+    });
+
+    const root = renderProperties(container, {
+      issue: createIssue(),
+      childIssues: [],
+      onUpdate,
+      inline: true,
+    });
+    await flush();
+
+    const parentTrigger = findRowTrigger(container, "Parent");
+    expect(parentTrigger).not.toBeUndefined();
+    await act(async () => {
+      parentTrigger!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await flush();
+
+    // With an empty search the picker shows the default page. The low-priority match is absent.
+    await waitForAssertion(() => {
+      expect(container.textContent).toContain("PAP-2 High priority candidate");
+    });
+    expect(container.textContent).not.toContain("PAP-900 Low priority needle");
+
+    const searchInput = container.querySelector('input[placeholder="Search tasks..."]') as HTMLInputElement | null;
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      nativeSetter?.call(searchInput, "needle");
+      searchInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    // The typed text re-queries the server with `q`, and the low-priority match now appears.
+    await waitForAssertion(() => {
+      expect(mockIssuesApi.list).toHaveBeenCalledWith("company-1", { q: "needle", limit: 50 });
+      expect(container.textContent).toContain("PAP-900 Low priority needle");
+      expect(container.textContent).not.toContain("PAP-2 High priority candidate");
+    });
+
+    const candidateButton = Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("PAP-900 Low priority needle"));
+    expect(candidateButton).not.toBeUndefined();
+
+    await act(async () => {
+      candidateButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith({ parentId: "issue-900" });
+
+    act(() => root.unmount());
+  });
+
   it("shows a run review action after reviewers are configured and starts execution explicitly when clicked", async () => {
     const onUpdate = vi.fn();
     const root = renderProperties(container, {
@@ -2823,6 +2899,74 @@ describe("IssueProperties", () => {
     expect(
       Array.from(container.querySelectorAll("button")).some((button) => button.textContent?.includes("Unarchive")),
     ).toBe(false);
+
+    act(() => root.unmount());
+  });
+  // PAP-16506 P4: only an agent sets `reviewPolicy`, so the panel shows it and
+  // never offers a control. The default — a NULL column, meaning anyone with
+  // write access can approve — is what every issue already does, so it shows
+  // nothing at all rather than a row reading "Anyone" or "None".
+  const findApprovalsRow = () =>
+    container.querySelector('[data-property-label="Approvals"]')?.closest('[data-property-row="true"]') ?? null;
+
+  it("shows no approvals row on an issue that has never set a policy", async () => {
+    const root = renderProperties(container, {
+      issue: createIssue({ reviewPolicy: null }),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    expect(findApprovalsRow()).toBeNull();
+    expect(container.textContent).not.toContain("Review policy");
+
+    act(() => root.unmount());
+  });
+
+  it("shows no approvals row when the policy is the explicit default", async () => {
+    const root = renderProperties(container, {
+      issue: createIssue({ reviewPolicy: "anyone" }),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    expect(findApprovalsRow()).toBeNull();
+
+    act(() => root.unmount());
+  });
+
+  it("badges an opt-in constraint read-only, with no control to change it", async () => {
+    const onUpdate = vi.fn();
+    const root = renderProperties(container, {
+      issue: createIssue({ reviewPolicy: "human_only" }),
+      childIssues: [],
+      onUpdate,
+      inline: true,
+    });
+    await flush();
+
+    const row = findApprovalsRow();
+    expect(row?.textContent).toContain("Human only");
+    // Read-only: the row is a chip, not a picker — nothing here can PATCH.
+    expect(row?.querySelector("button")).toBeNull();
+    expect(onUpdate).not.toHaveBeenCalled();
+
+    act(() => root.unmount());
+  });
+
+  it("badges a not_creator policy as 'Anyone else'", async () => {
+    const root = renderProperties(container, {
+      issue: createIssue({ reviewPolicy: "not_creator" }),
+      childIssues: [],
+      onUpdate: vi.fn(),
+      inline: true,
+    });
+    await flush();
+
+    expect(findApprovalsRow()?.textContent).toContain("Anyone else");
 
     act(() => root.unmount());
   });
