@@ -261,7 +261,17 @@ export function NewAgent() {
         adapterConfig: buildAdapterConfig(),
         permissions,
       }),
-      ...(importedInstructions ? { instructionsBundle: importedInstructions } : {}),
+      ...(importedInstructions
+        ? {
+            instructionsBundle: {
+              entryFile: importedInstructions.entryFile,
+              files: importedInstructions.files.reduce((acc, file) => {
+                acc[file.path] = file.content;
+                return acc;
+              }, {} as Record<string, string>),
+            },
+          }
+        : {}),
     });
   }
 

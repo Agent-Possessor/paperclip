@@ -715,8 +715,8 @@ function OnboardingWizardInner({
       setModel(DEFAULT_OPENCODE_LOCAL_MODEL);
       return;
     }
-    if (next === "gemini_local") {
-      setModel(DEFAULT_GEMINI_LOCAL_MODEL);
+    if (next === "antigravity_local") {
+      setModel(DEFAULT_ANTIGRAVITY_LOCAL_MODEL);
       return;
     }
     if (next === "cursor") {
