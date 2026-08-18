@@ -9,6 +9,15 @@ Knowledge base ini disusun dari repository `menu-kita-app.zip`, terutama:
 - Implementasi frontend customer health di `menu_kita/lib/data/customer_health`, `menu_kita/lib/domain/customer_health`, `menu_kita/lib/model/local/customer_health_vm.dart`, halaman `pages/customer/detail/health`, `pages/customer/detail/workout`, `pages/customer/detail/activity`, `pages/customer/detail/club`, dan status nutrisi di detail menu.
 - Implementasi merchant challenge di `pages/client/detail/config_challenge` dan trigger/diagnostic nutrisi menu di `controller/page/sub_client/page/config_menu_sub_client_page_controller.dart`.
 
+## Sumber Eksternal untuk Threads Content Playbook
+
+- Panduan resmi Meta mengenai peran replies, frekuensi posting, format media + teks, percakapan, dan kategori dengan reply tinggi.
+- Laporan agregat BlackTwist Februari dan Juni 2026 untuk perbandingan format, reach, engagement, dan contoh post berkinerja tinggi.
+- Halaman publik Threads `@digitalwithawe` yang diberikan pengguna untuk analisis caption dan visual.
+- API Repliz untuk verifikasi read-only status koneksi akun; akses konten/analitik memerlukan peningkatan paket pada saat riset dilakukan.
+
+URL dan catatan metodologi lengkap tersedia di `../marketing/threads-content-playbook.md`.
+
 ## Batasan
 - Tidak semua kemampuan yang teridentifikasi berarti aktif untuk setiap merchant.
 - Kebijakan harga, biaya transaksi, cakupan payment, dan SLA bukan sumber final dari repository ini.
