@@ -27,4 +27,5 @@ Gunakan knowledge base ini saat pengguna bertanya tentang Menu Kita, manfaatnya,
 - Model bisnis: `business/business-model.md`
 - Cara menjual dan menangani keberatan: `agent-guidelines/sales-faq-objections.md`
 - Batas klaim dan gaya komunikasi: `agent-guidelines/communication-rules.md`
+- Riset, pola bahasa, dan contoh konten Threads: `marketing/threads-content-playbook.md`
 - Bukti sumber: `references/source-map.md`
