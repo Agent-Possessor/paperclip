@@ -10,6 +10,7 @@
 - `business/business-model.md` for commercial framing.
 - `business/growth-and-retention.md` for acquisition and retention questions.
 - `business/finance-and-decision-support.md` for finance and decision support questions.
+- `marketing/threads-content-playbook.md` for Threads research, language patterns, content flows, and Menu Kita examples.
 
 ## Safe answers
 - `agent-guidelines/communication-rules.md` for claim boundaries.
